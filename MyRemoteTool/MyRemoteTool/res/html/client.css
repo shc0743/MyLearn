@@ -1,0 +1,147 @@
+
+body {
+    user-select: text;
+}
+
+.no-margin {
+    margin: 0;
+}
+
+.color-gray {
+    color: gray;
+}
+.color-ccc {
+    color: #ccc;
+}
+.color-black {
+    color: black;
+}
+
+hr.hr {
+    border: 1px solid ;
+}
+
+hr.hr-color-ccc {
+    border: 1px solid #ccc;
+}
+
+hr.hr-v {
+    display: block;
+    width: 2px;
+    height: 100%;
+    overflow: hidden;
+
+}
+
+.border-ccc {
+    border: 1px solid #ccc;
+}
+
+.absolute-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.scrollable {
+    overflow: auto;
+}
+.hidescroll {
+    overflow: hidden;
+}
+
+#sidebar_split {
+    position: fixed;
+    width: 5px;
+    height: 100%;
+    overflow: hidden;
+    border-left: 2px solid gray;
+    cursor: e-resize;
+}
+
+.page-fixed-left-top-0 {
+    position: fixed;
+    left: 0; top: 0;
+}
+
+.username {
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: pre;
+    font-size: larger;
+    font-weight: bold;
+    margin: 10px;
+}
+/*.username::-webkit-scrollbar {
+    height: 0;
+}*/
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    padding: 0;
+    height: 100%;
+
+}
+.sidebar-left {
+    left: 0;
+    font-size: large;
+}
+.sidebar-right {
+    right: 0;
+}
+
+.sidebar-left .item {
+    cursor: pointer;
+    margin-left: 5px;
+    background: white;
+    padding: 3px;
+    margin-bottom: 10px;
+}
+.sidebar-left .item[data-checked] {
+    background: #aaaaaa;
+}
+.sidebar-left .item:hover {
+    background: #DDDDDD;
+}
+
+.sidebar-left .bottom-flex {
+    position: absolute;
+    width: 100%;
+    bottom: 0;
+}
+
+.network-status-tip {
+    position: fixed;
+    right: 10px;
+    top: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 10px;
+    z-index: 9900;
+    padding: 10px;
+    vertical-align: bottom;
+    user-select: none;
+}
+.network-status-tip div {
+    display: inline-block;
+}
+.network-status-tip-statbox {
+    position: absolute;
+    top: 5px;
+    left: 10px;
+    width: 16px;
+    height: 16px;
+    margin: 5px;
+    border-radius: 100%;
+}
+.network-status-tip-space {
+    width: 20px;
+}
+
+#connection_form {
+    margin-right: 20px;
+    padding: 10px;
+}
+

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" window-frame="extended" window-frame--2="none">
+
+<head>
+    <meta charset="utf-8" />
+    <title>My Remote Tool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="./global.css" />
+    <link rel="stylesheet" type="text/css" href="./client.css" />
+</head>
+
+<body>
+
+    <main>
+
+        <div class="page-main-content page-fixed-left-top-0">
+        
+            <div class="sidebar sidebar-left hidescroll" style="width: 300px;">
+                <div id="panel_choose" class="content">
+                    <div class=""><div class="username" id="sidebar_username" role="window-caption">User</div></div>
+                    <hr class="hr hr-color-ccc" />
+                    <div class="item" tabindex="0" data-panel="general" data-checked>General</div>
+                    <div class="item" tabindex="0" data-panel="connect">Connection</div>
+                    <div class="item" tabindex="0" data-panel="remote">Remote</div>
+                    <div class="item" tabindex="0" data-panel="settings">Settings</div>
+                    <div class="item" tabindex="0" data-panel="about">About</div>
+
+                    <div class="bottom-flex hidescroll">
+                        <hr class="hr color-gray " />
+                        <div class="item" tabindex="0" id="b_Exit">Exit</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hr hr-v" id="sidebar_split" tabindex="0"></div>
+
+            <div class="sidebar sidebar-right">
+                <div class="content">
+                    <style>.sidebar .content .page[data-panel] { display: none; }</style>
+                    <style type="text/trashed" id="sidebar_function_select_hider">
+                        .sidebar .content .page[data-panel="general"] { display: block; }
+                    </style>
+
+                    <div class="page" data-panel="general">
+                        <h1 style="text-align:center">My Remote Tool Client</h1>
+                    </div>
+
+                    <div class="page" data-panel="connect">
+                        <h1 style="text-align:center">Connection</h1>
+
+                        <form id="connection_form" class="border-ccc">
+                            <fieldset>
+                                <legend class="color-black">Connection</legend>
+                                <div>
+                                    <div><label>
+                                        <b>Server Address</b>&nbsp;&nbsp;
+                                        <input style="width:1*" id="connect_ip" /> <span>:</span>
+                                        <input type="number" id="connect_port" min="1" max="65535" />
+                                    </label></div>
+                                </div>
+                            </fieldset>
+
+                            <div style="margin-top:10px">
+                                <button style="width:1*" type="submit">Connect</button>
+                            </div>
+                        </form>
+
+                        <p class="tryingtoconnect" style="display:none">Trying to connect...</p>
+                        <div class="connected" style="display:none">
+                            <h3 style="text-align:center">Connection is live</h3>
+                            <button style="width:1*;margin-right:20px;" id="disconnectbtn">Disconnect</button>
+                        </div>
+                    </div>
+
+                    <div class="page" data-panel="about">
+                        <h1 style="text-align:center">About</h1>
+
+                        <div class="absolute-center scrollable" style="border: 1px solid #ccc;width:50%;max-height:50%;">
+                            <div>
+                                <p><b>My Remote Tool</b></p>
+                                <hr class="hr hr-color-ccc" />
+                                <div><b>Version</b> 1.2.0.0</div>
+                                <div><b>Product Name</b> MyRemoteTool</div>
+                                <div><b>Product Arch</b> <span class="about_archshow"></span></div>
+                                <hr class="hr hr-color-ccc" />
+                                <p><b>License</b> <a href="#" id="open_license">LGPL</a>
+                                     (<a href="https://www.gnu.org/licenses/lgpl-3.0-standalone.html">Open in browser</a>)</p>
+                                <hr class="hr hr-color-ccc" />
+                                <p>Browser supports by <a href="https://sciter.com" target="_blank">sciter</a></p>
+                                <hr class="hr hr-color-ccc" />
+                                <p>
+                                    <b>Third Party Software List</b>
+                                    <ul style="padding-left: 20px;">
+                                        <li><a target="_blank" href="https://7-zip.org/">7-Zip</a></li>
+                                        <li><a target="_blank" href="https://sciter.com">sciter</a></li>
+                                    </ul>
+                                </p>
+                                <hr class="hr hr-color-ccc" />
+                                <p><button style="width:1*" id="about__reloadpage">Reload</button></p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="network-status-tip">
+            <div class="network-status-tip-statbox"></div>
+            <div class="network-status-tip-space"></div>
+            <div class="network-status-tip-text">Loading</div>
+        </div>
+
+    </main>
+
+    <script src="./client.js"></script>
+</body>
+
+</html>

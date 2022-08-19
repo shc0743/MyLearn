@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - My Remote Terminal</title>
+    <link rel="stylesheet" href="login_page.css" />
+    <link rel="stylesheet" href="/static/global.css" />
+    <script src="/static/ModalElement.js"></script>
+</head>
+<body>
+
+    <noscript>Please enable JavaScript to access this website.</noscript>
+
+    <main>
+        <div id="main" style="display: none;">
+
+            <form class="login_box" id="login_box" method="post">
+                <h1>Login</h1>
+
+                <div class="input_box">
+                    <div data-type="username">
+                        <label>
+                            <span>Username</span>
+                            <input type="text" name="username">
+                        </label>
+                    </div>
+
+                    <div data-type="password">
+                        <label>
+                            <span>Password</span>
+                            <input type="password" name="password">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="iForgotMyPassword" style="display:none">
+                    <a id="iForgotMyPassword" href="#">I Forgot My Password</a>
+                </div>
+
+                <input type="hidden" name="PasswordEncrypted" />
+                <input type="hidden" name="PasswordEncryptAlgorithm" />
+
+                <div class="box btn-login">
+                    <button type="submit">Login</button>
+                    <span class="space"></span>
+                    <button type="reset">Cancel</button>
+                </div>
+
+            </form>
+
+        </div>
+    </main>
+
+    <script src="login.auth.js"></script>
+    
+</body>
+</html>

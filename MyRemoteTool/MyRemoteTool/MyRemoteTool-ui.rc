@@ -1,0 +1,209 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "MyRemoteTool-ui.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// 非特定语言 resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(936)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "MyRemoteTool-ui.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // 非特定语言 resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// 非特定语言(默认值) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEUD)
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
+#pragma code_page(936)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU_CLTMAIN MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&New Session",                ID_CLTMAIN_FILE_NEWSESSION
+        MENUITEM SEPARATOR
+        MENUITEM "&Open session",               ID_CLTMAIN_FILE_OPENSESSION
+        POPUP "Recent sessions..."
+        BEGIN
+            MENUITEM "Recent sessions",             65535, GRAYED
+            MENUITEM SEPARATOR
+            MENUITEM "&Clear",                      ID_CLTMAIN_RECENTSESSIONS_CLEAR
+            MENUITEM SEPARATOR
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "&Save session info",          ID_CLTMAIN_FILE_SAVESESSION
+        MENUITEM "Save session as...",          ID_CLTMAIN_FILE_SAVESESSIONAS
+        MENUITEM SEPARATOR
+        MENUITEM "&Close",                      ID_CLTMAIN_FILE_CLOSE
+        MENUITEM "&Exit",                       ID_CLTMAIN_FILE_EXIT
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "Edit",                        ID_CLTMAIN_EDIT, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "Cut",                         ID_CLTMAIN_EDIT
+        MENUITEM "Copy",                        ID_CLTMAIN_COPY
+        MENUITEM "Paste",                       ID_CLTMAIN_PASTE
+        MENUITEM SEPARATOR
+        MENUITEM "Find",                        ID_CLTMAIN_FIND
+        MENUITEM "Replace",                     ID_CLTMAIN_REPLACE
+        MENUITEM SEPARATOR
+        MENUITEM "Settings",                    ID_CLTMAIN_SETTINGS
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "Full Screen",                 ID_CLTMAIN_VIEW_FULLSCREEN
+    END
+    POPUP "&Window"
+    BEGIN
+        MENUITEM "&Close",                      ID_CLTMAIN_WINDOW_CLOSE
+        MENUITEM "&Reload",                     ID_CLTMAIN_WINDOW_RELOAD
+    END
+    POPUP "&Remote"
+    BEGIN
+        MENUITEM "Remote Connection",           65535, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "&Disconnect",                 ID_CLTMAIN_DISCONNECT
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "Get Help (F1)",               ID_CLTMAIN_HELP_GETHELP
+        MENUITEM SEPARATOR
+        MENUITEM "Help &Document (Shift+F1)",   ID_CLTMAIN_HELP_DOC
+        MENUITEM SEPARATOR
+        MENUITEM "Enable debugging features",   ID_CLTMAIN_HELP_ENABLEDEBUG
+        POPUP "DEBUG", GRAYED
+        BEGIN
+            MENUITEM "Warning: These are for only debugging.", 65535, GRAYED
+            MENUITEM "They may cause data lose or appcrash.", 65535, GRAYED
+            MENUITEM "Please use them carefully!!!", 65535, GRAYED
+            MENUITEM SEPARATOR
+            POPUP "Force set bConnectionLiveFlag"
+            BEGIN
+                MENUITEM "FALSE",                       ID_CLTMAIN_FORCESETBCONLIVE_F
+                MENUITEM "TRUE",                        ID_CLTMAIN_FORCESETBCONLIVE_T
+            END
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "Inspect Sciter.JS Page",      ID_CLTMAIN_HELP_INSPECTSCITER
+        MENUITEM SEPARATOR
+        POPUP "&License"
+        BEGIN
+            MENUITEM "Open Source Software",        65535, GRAYED
+            MENUITEM SEPARATOR
+            MENUITEM "License: LGPL",               ID_CLTMAIN_LICENSE_LICENSE
+            MENUITEM SEPARATOR
+            MENUITEM "&Project location...",        ID_CLTMAIN_PROJECTLOCATION
+        END
+        MENUITEM "&About",                      ID_CLTMAIN_HELP_ABOUT
+    END
+    MENUITEM "Focus",                       ID_CLTMAIN_FOCUSINBROWSER
+    MENUITEM "ShellAbout",                  ID_CLTMAIN_SHELLABOUT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_PSWDINPUT DIALOGEX 0, 0, 201, 64
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Password"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Please input your &password:",IDC_STATIC,7,7,187,9
+    EDITTEXT        IDC_EDIT_PSWDDLG_PASSWORD,7,23,187,14,ES_PASSWORD | ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "&OK",IDOK,6,43,50,14
+    PUSHBUTTON      "&Cancel",IDCANCEL,145,43,50,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG_PSWDINPUT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 194
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 57
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG_PSWDINPUT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // 非特定语言(默认值) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

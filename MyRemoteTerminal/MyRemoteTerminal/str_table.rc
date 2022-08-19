@@ -1,0 +1,96 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "str_table.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// 非特定语言(默认值) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEUD)
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
+#pragma code_page(936)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "str_table.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_STRING_APP_UUID     "dce5be09-4e73-4e0c-89c2-01957d7e9587"
+    IDS_STRING_APP_GUID     "{877DD819-4259-4D46-805B-A49426A03551}"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_STRING_SVC_DEFAULT_NAME "MyRemoteTerminalService_dce5be09"
+    IDS_STRING_SVC_DEFAULT_DISPLAY_NAME 
+                            "My Remote Terminal Service @dce5be09 (%ServiceName%)"
+    IDS_STRING_SVC_DEFAULT_DESCRIPTION 
+                            "Create a HTTP server on specified port in order to open terminal remotely. If this service is disabled, you will not able to use the remote terminal on specified HTTP."
+    IDS_STRING_SVC_DEPENDENCIES "tcpip\0DcomLaunch\0"
+    IDS_STRING_SRV_USERFILE_LOCATION "./USERS.DAT"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_STRING_UI_SETUPWINDOW_CLASS 
+                            "Window.MyRemoteTerminal@dce5be09.SetupWindow.class"
+    IDS_STRING_UI_SETUPWINDOW_TITLE "My Remote Terminal Setup (%uuid%) "
+END
+
+STRINGTABLE
+BEGIN
+    IDS_STRING_NETWORK_DEFAULTPORT "50370"
+END
+
+#endif    // 非特定语言(默认值) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

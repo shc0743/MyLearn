@@ -1,0 +1,98 @@
+
+body {
+    margin: 0;
+    /*
+    background: url(/api?type=image&page=login&image=backg) no-repeat;
+    background-size: cover;
+    */
+}
+
+#main, #login_box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#main {
+    height: 100vh;
+}
+
+#login_box {
+    border: 1px solid rgba(180, 180, 180, 0.3);
+    backdrop-filter: blur(10px);
+    padding: 20px 10px;
+    min-width: 300px;
+    min-height: 200px;
+    background: rgba(200, 200, 200, 0.3);
+}
+
+#login_box > h1:nth-child(1) {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+#login_box .btn-login {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0 15px;
+    margin-top: 10px;
+}
+
+#login_box .btn-login > button {
+    width: 100%;
+    height: 30px;
+    border-radius: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    transition: 0.1s;
+}
+
+#login_box .btn-login > button:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+#login_box .btn-login .space {
+    display: inline-block;
+    width: 20px;
+}
+
+#login_box .input_box > div {
+    margin-bottom: 5px;
+}
+
+#login_box .input_box input {
+    background: rgba(240, 240, 240, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    height: 22px;
+    border-radius: 5px;
+    width: 100%;
+    transition: 0.1s;
+}
+#login_box .input_box input:hover {
+    background: rgba(248, 248, 248, 0.5);
+}
+#login_box .input_box input:focus {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+#login_box {
+    font-size: 18px;
+}
+
+#login_box > div.input_box > div > label {
+    font-family: Consolas, sans-serif;
+}
+
+#iForgotMyPassword {
+    color: blue;
+    font-size: small;
+    text-align: end;
+}
+div.iForgotMyPassword {
+    text-align: end;
+}
+

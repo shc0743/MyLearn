@@ -1,0 +1,9 @@
+# HTTP Server File Mapping
+
+/static/global.css=html/static/global.css
+/static/ModalElement.js=html/static/ModalElement.js
+
+/auth/oauth2/login/=html/LogonAuth/login.html
+/auth/oauth2/login/login.auth.js=html/LogonAuth/login.auth.js
+/auth/oauth2/login/login_page.css=html/LogonAuth/login_page.css
+
