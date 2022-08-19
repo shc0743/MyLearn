@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - My Remote Terminal</title>
+    <!--link rel="stylesheet" href="login_page.css" /-->
+    <link rel="stylesheet" href="/static/global.css" />
+    <script src="/static/ModalElement.js"></script>
+    <style>
+        body {
+            font-family: Consolas, monospace;
+        }
+    
+        .main {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(to right bottom, rgba(171, 205, 239, 0.3), rgba(221, 238, 255, 0.5));
+            padding: 5px 20px;
+            max-width: 60%;
+            max-height: 60%;
+            overflow: auto;
+            text-align: center;
+            border: 3px ridge #89abcd;
+        }
+
+        #main .input_box > * {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <noscript>Please enable JavaScript to access this website.</noscript>
+
+    <main>
+        <div id="main" class="main" style="display: none;">
+
+            <form class="login_box" id="login_box" method="post">
+                <h1>Login</h1>
+
+                <div class="input_box">
+                    <div data-type="username">
+                        <label>
+                            <span>Username</span>
+                            <input type="text" name="username">
+                        </label>
+                    </div>
+
+                    <div data-type="password">
+                        <label>
+                            <span>Password</span>
+                            <input type="password" name="password">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="iForgotMyPassword">
+                    <a id="iForgotMyPassword" href="#">I Forgot My Password</a>
+                </div>
+
+                <input type="hidden" name="PasswordEncrypted" />
+                <input type="hidden" name="PasswordEncryptAlgorithm" />
+
+                <div class="box btn-login" style="margin:15px 5px 10px 5px">
+                    <button type="submit">Login</button>
+                    <span class="space"></span>
+                    <button type="reset">Cancel</button>
+                </div>
+
+            </form>
+
+        </div>
+    </main>
+
+    <script src="login.auth.js"></script>
+    
+</body>
+</html>

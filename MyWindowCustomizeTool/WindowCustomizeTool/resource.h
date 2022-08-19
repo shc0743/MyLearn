@@ -1,0 +1,88 @@
+﻿//{{NO_DEPENDENCIES}}
+// Microsoft Visual C++ 生成的包含文件。
+// 供 WindowCustomizeTool.rc 使用
+//
+#define IDR_MAINFRAME                   128
+#define IDS_STRING_APP_UUID             130
+#define IDI_ICON_WINDOWFINDER_0         131
+#define IDI_ICON_WINDOWFINDER_1         132
+#define IDC_CURSOR_WINDOWFINDER         133
+#define IDS_STRING_APP_TITLE            134
+#define IDS_STRING_UI_WNDCLASS          135
+#define IDS_STRING_UI_TSKICONTEXT       136
+#define IDR_MENU_MAINWND                138
+#define IDR_ACCELERATOR_MAINWND         139
+#define IDS_STRING_APP_REG_KEYNAME      140
+#define IDS_STRING_UI_BACKGCLASS        141
+#define IDS_STRING_UI_RESIZERCLASS      142
+#define IDD_ABOUTBOX                    1101
+#define IDD_DIALOG_WINDOWFINDER1        1102
+#define IDD_DIALOG_SWP_ARGS             1103
+#define IDC_WINDOWFINDER_CAPTION        1623
+#define IDC_WINDOWFINDER_CLASS          1624
+#define IDC_WINDOWFINDER_HANDLE         1625
+#define IDC_WINDOWFINDER_FT             1626
+#define IDC_EDIT_SWP_hWndInsertAfter    1700
+#define IDC_EDIT_SWP_X                  1701
+#define IDC_EDIT_SWP_Y                  1702
+#define IDC_EDIT_SWP_cx                 1703
+#define IDC_EDIT_SWP_cy                 1704
+#define IDC_EDIT_SWP_uFlags             1705
+#define IDC_BUTTON_SWP_APPLY            1706
+#define IDC_BUTTON_SWP_HELP             1707
+#define ID_MENU_FILE_CLOSE              32774
+#define ID_MENU_FILE_EXIT               32775
+#define ID_MENU_FILE_NEW                32776
+#define ID_MENU_FILE_SAVE_WINDOWLIST    32777
+#define ID_MENU_FILE_SAVE_HWNDLIST      32778
+#define ID_MENU_EDIT_OPTIONS            32779
+#define ID_MENU_WINDOW_NEW              32780
+#define ID_MENU_OPTIONS_SETTINGS        32781
+#define ID_MENU_OPTIONS_ALWAYSONTOP     32782
+#define ID_MENU_OPTIONS_TASKBARICON     32783
+#define ID_MENU_HELP_ABOUT              32784
+#define ID_MENU_HELP_HELP               32785
+#define ID_MENU_OPTIONS_HIDEWHENMINIMID 32786
+#define ID_MENU_WINDOW_FIND             32787
+#define ID_MENU_WINDOWMANAGER_BTF       32788
+#define ID_MENU_WINDOWMANAGER_SWITCHTO  32789
+#define ID_MENU_NEW_FRAME_MAINWND       32790
+#define ID_MENU_PROCESS_IMAGENAME       32791
+#define ID_MENU_PROCESS_PID             32792
+#define ID_MENU_PROCESS_TERMINATE       32793
+#define ID_MENU_PROCESS_OPENLOCATION    32794
+#define ID_MENU_PROCESS_KILLANDDELETE   32795
+#define ID_MENU_WINDOWMANAGER_PROPERIES 32796
+#define ID_MENU_ALPHA_ADD10             32797
+#define ID_MENU_ALPHA_SUB10             32798
+#define ID_MENU_ALPHA_ADD               32799
+#define ID_MENU_ALPHA_SUB               32801
+#define ID_MENU_WINDOWMANAGER_MAXIMIZE  32802
+#define ID_MENU_WINDOWMANAGER_MINIMIZE  32803
+#define ID_MENU_WINDOWMANAGER_HIDE      32804
+#define ID_MENU_WINDOWMANAGER_SHOW      32805
+#define ID_MENU_WINDOWMANAGER_RELOAD    32806
+#define ID_MENU_WINDOWMANAGER_SWP       32807
+#define ID_MENU_WINDOWMANAGER_ENDTASK   32808
+#define ID_MENU_WINDOWMANAGER_DESTROY   32809
+#define ID_MENU_WINDOWMANAGER_CLOSE     32810
+#define ID_MENU_OPTIONS_RUNATLOGON      32811
+#define ID_MENU_ABOUT                   32812
+#define ID_MENU_WINDOWMANAGER_RESIZE    32813
+#define ID_MENU_PROCESS_IMAGEPATH       32814
+#define ID_WINDOWMANAGER_HIGHLIGHT      32815
+#define ID_MENU_WINDOWMANAGER_HIGHLIGHT 32816
+#define IDC_WINDOWFINDER_HELP           57670
+#define IDC_STATIC                      -1
+
+// Next default values for new objects
+// 
+#ifdef APSTUDIO_INVOKED
+#ifndef APSTUDIO_READONLY_SYMBOLS
+#define _APS_NO_MFC                     1
+#define _APS_NEXT_RESOURCE_VALUE        139
+#define _APS_NEXT_COMMAND_VALUE         32887
+#define _APS_NEXT_CONTROL_VALUE         1009
+#define _APS_NEXT_SYMED_VALUE           110
+#endif
+#endif

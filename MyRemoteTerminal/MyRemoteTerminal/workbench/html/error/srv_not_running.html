@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Unavailable</title>
+
+    <style>
+        body {
+            font-family: Consolas, monospace;
+        }
+
+        .main {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(to right bottom, rgba(171, 205, 239, 0.3), rgba(221, 238, 255, 0.5));
+            padding: 5px 20px;
+            max-width: 60%;
+            max-height: 60%;
+            overflow: auto;
+            text-align: center;
+            border: 3px ridge #89abcd;
+        }
+    </style>
+
+    <style>
+        .modal.open::before {
+            content: "";
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            z-index: 134217726;
+            background: #000000;
+            opacity: 0.5;
+        }
+        .modal > * {
+            background: white;
+            z-index: 134217727;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main">
+        <div>
+            <h1>Service Unavailable</h1>
+
+            <p></p>
+                <div>The service is not available now.</div>
+                <div>If you are system administrator, you can <a id="cont" style="color:blue" href="/api/server/run">Continue</a>.</div>
+            <p></p>
+            
+        </div>
+
+    </div>
+
+    <div id="access_denied_dialog-compat" class="modal dialog open" hidden>
+        <div style="border: 3px ridge #dd0000;padding: 10px;text-align: center;">
+            <h1>You have no access to continue.</h1>
+            <div>
+                <a href="javascript:document.getElementById('access_denied_dialog-compat').hidden=true;void(0)">Close</a>
+            </div>
+        </div>
+    </div>
+    <dialog id="access_denied_dialog" style="border: 3px ridge #dd0000;">
+        <div style="text-align: center;">
+            <h1>You have no access to continue.</h1>
+            <div>
+                <a href="javascript:void access_denied_dialog.close()">Close</a>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        if (access_denied_dialog.show === undefined) {
+            access_denied_dialog.hidden = true;
+            window.access_denied_dialog = document.getElementById('access_denied_dialog-compat');
+            access_denied_dialog.unhide = function () {access_denied_dialog.hidden=false};
+        }
+
+        cont.onclick = function (ev) {
+            ev.preventDefault();
+
+            fetch(this.href)
+            .then(function (r) {
+                if (!r.ok) {
+                    access_denied_dialog.hidden = false;
+                    access_denied_dialog.showModal();
+                }
+                else location.reload();
+            });
+        }
+    </script>
+    
+</body>
+</html>
