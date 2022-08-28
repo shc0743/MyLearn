@@ -24,8 +24,6 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
 // BIN
 //
 
-IDR_BIN_7z              BIN                     "7za.exe"
-
 IDR_BIN_HTMLPACK        BIN                     "html_content.7z"
 
 #endif    // 非特定语言(默认值) resources

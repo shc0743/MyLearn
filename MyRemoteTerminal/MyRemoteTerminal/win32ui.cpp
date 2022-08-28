@@ -102,6 +102,7 @@ typedef struct {
 	HWND
 		svcname,
 		svcstartup,
+		svcinstd,
 		srvip,
 		srvport;
 } WndData_SetupWnd;
@@ -151,40 +152,54 @@ static LRESULT CALLBACK WndProc_SetupWnd(HWND hwnd, UINT msg, WPARAM wParam, LPA
 		SendMessage(dat->svcstartup, CB_ADDSTRING, 0, (LPARAM)L"Disabled");
 		SendMessage(dat->svcstartup, CB_SETCURSEL, 1, 0);
 
+		W32UI_CTLS_ROW(3);
 		SendMessage(CreateWindowExW(0,
-			L"Static", L"", defws | WS_BORDER, 10, 120, 600, 1,
+			L"Static", L"Install Path: ", defws, 10, 120, 100, 25,
+			hwnd, 0, 0, 0), WM_SETFONT, (WPARAM)hFontDefault, 0);
+		dat->svcinstd = CreateWindowExW(0, L"Edit", L"(Default)",
+			defws | WS_BORDER, 120, 120, 490, 25, hwnd, 0, 0, 0);
+		SendMessage(dat->svcinstd, WM_SETFONT, (WPARAM)hFontDefault, 0);
+
+		SendMessage(CreateWindowExW(0,
+			L"Static", L"", defws | WS_BORDER, 10, 155, 600, 1,
 			hwnd, 0, 0, 0), WM_SETFONT, (WPARAM)hFontDefault, 0);
 
 		W32UI_CTLS_ROW(3);
 		SendMessage(CreateWindowExW(0,
-			L"Static", L"Server IP: ", defws, 10, 130, 100, 25,
+			L"Static", L"Server IP: ", defws, 10, 165, 100, 25,
 			hwnd, 0, 0, 0), WM_SETFONT, (WPARAM)hFontDefault, 0);
 		dat->srvip = CreateWindowExW(0,
 			L"Edit", L"Default (If you are installing this is unused)",
-			defws | WS_BORDER, 120, 130, 490, 25,
+			defws | WS_BORDER, 120, 165, 490, 25,
 			hwnd, 0, 0, 0);
 		SendMessage(dat->srvip, WM_SETFONT, (WPARAM)hFontDefault, 0);
 
 		W32UI_CTLS_ROW(4);
 		SendMessage(CreateWindowExW(0,
-			L"Static", L"Server Port: ", defws, 10, 165, 100, 25,
+			L"Static", L"Server Port: ", defws, 10, 200, 100, 25,
 			hwnd, 0, 0, 0), WM_SETFONT, (WPARAM)hFontDefault, 0);
 		dat->srvport = CreateWindowExW(0,
-			L"Edit", wDfpt, defws | WS_BORDER | ES_NUMBER, 120, 165, 490, 25,
+			L"Edit", wDfpt, defws | WS_BORDER | ES_NUMBER, 120, 200, 490, 25,
 			hwnd, 0, 0, 0);
 		SendMessage(dat->srvport, WM_SETFONT, (WPARAM)hFontDefault, 0);
 
 		SendMessage(CreateWindowExW(0,
-			L"Static", L"", defws | WS_BORDER, 10, 200, 600, 1,
+			L"Static", L"", defws | WS_BORDER, 10, 235, 600, 1,
 			hwnd, 0, 0, 0), WM_SETFONT, (WPARAM)hFontDefault, 0);
 
 		W32UI_CTLS_ROW(5);
 		SendMessage(CreateWindowExW(0,
 			L"Static", L"Already have a server?", defws | SS_CENTERIMAGE
-			, 10, 210, 160, 30,
+			, 10, 245, 160, 30,
 			hwnd, 0, 0, 0), WM_SETFONT, (WPARAM)hFontDefault, 0);
 		SendMessage(CreateWindowExW(0,
-			L"Button", L"Con&figure", defws | BS_VCENTER, 180, 210, 430, 30,
+			L"Button", L"&Activate", defws | BS_VCENTER, 180, 245, 120, 30,
+			hwnd, (HMENU)IDNO, 0, 0), WM_SETFONT, (WPARAM)hFontDefault, 0);
+		SendMessage(CreateWindowExW(0, L"Static", L"or",
+			defws | SS_CENTERIMAGE , 310, 245, 20, 30, hwnd, 0, 0, 0),
+			WM_SETFONT, (WPARAM)hFontDefault, 0);
+		SendMessage(CreateWindowExW(0,
+			L"Button", L"Con&figure", defws | BS_VCENTER, 340, 245, 270, 30,
 			hwnd, (HMENU)IDRETRY, 0, 0), WM_SETFONT, (WPARAM)hFontDefault, 0);
 
 		W32UI_CTLS_ROW(-1);
@@ -205,6 +220,19 @@ static LRESULT CALLBACK WndProc_SetupWnd(HWND hwnd, UINT msg, WPARAM wParam, LPA
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)dat);
 
 	}
+		break;
+
+	case WM_KEYDOWN:
+		if (wParam == VK_TAB) {
+			HWND h = GetFocus();
+			if (!h) h = hwnd;
+			UINT f = HIWORD(GetKeyState(VK_SHIFT)) ? GW_HWNDPREV : GW_HWNDNEXT;
+			HWND n = GetNextWindow(h, f);
+			if (GetParent(n) != hwnd) n = GetNextWindow(hwnd, f);
+			SetFocus(n);
+			return true;
+		}
+		return DefWindowProc(hwnd, msg, wParam, lParam);
 		break;
 
 	case WM_COMMAND:
@@ -241,6 +269,30 @@ static LRESULT CALLBACK WndProc_SetupWnd(HWND hwnd, UINT msg, WPARAM wParam, LPA
 		}
 			break;
 
+		case IDNO:
+		{
+			WndData_SetupWnd* dat = (WndData_SetupWnd*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+			if (!dat) break;
+
+			WCHAR buffer[256]{};
+			GetWindowTextW(dat->svcname, buffer, 256);
+
+			if (!IsRunAsAdmin()) {
+				int btn = 0;
+				TaskDialog(hwnd, NULL, L"Activate - My Remote Terminal",
+					L"Administrator privileges are required to continue.",
+					L"Do you want to elevate?",
+					TDCBF_OK_BUTTON | TDCBF_CANCEL_BUTTON,
+					TD_SHIELD_ICON, &btn);
+				if (btn != IDOK) break;
+			}
+
+			ShellExecuteW(NULL, (IsRunAsAdmin() ? L"open" : L"runas"),
+				s2wc(GetProgramDir()), (L"--type=service-activator --name=\""s
+					+ buffer + L"\"").c_str(), NULL, SW_NORMAL);
+		}
+			break;
+
 		case IDYES:
 		{
 			WndData_SetupWnd* dat = (WndData_SetupWnd*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -255,6 +307,9 @@ static LRESULT CALLBACK WndProc_SetupWnd(HWND hwnd, UINT msg, WPARAM wParam, LPA
 			cmdl += L"\" --port=\"";
 			GetWindowTextW(dat->srvport, buffer, 1024);
 			cmdl += buffer;
+			cmdl += L"\" --INSTALLDIR=\"";
+			GetWindowTextW(dat->svcinstd, buffer, 1024);
+			if (wstring(buffer) != L"(Default)") cmdl += buffer;
 			cmdl += L"\" --startup=\"";
 			static std::map<LRESULT, std::wstring> StartupTypeMapping;
 			if (StartupTypeMapping.empty()) {
@@ -338,6 +393,12 @@ static LRESULT CALLBACK WndProc_SetupWnd(HWND hwnd, UINT msg, WPARAM wParam, LPA
 			DWORD exitCode = 0;
 			GetExitCodeProcess(execinfo.hProcess, &exitCode);
 			CloseHandle(execinfo.hProcess);
+
+			if (exitCode == ERROR_RESTART_APPLICATION) {
+				MessageBoxTimeoutW(hwnd, ErrorCodeToStringW(ERROR_RESTART_APPLICATION)
+					.c_str(), L"Information", MB_ICONHAND, 0, 2000);
+				ExitProcess(ERROR_RESTART_APPLICATION);
+			}
 
 			TaskDialog(hwnd, NULL, L"My Remote Terminal",
 				ErrorCodeToStringW(exitCode).c_str(),

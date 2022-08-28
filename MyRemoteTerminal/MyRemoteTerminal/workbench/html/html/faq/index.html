@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQs</title>
+    <link rel="stylesheet" href="/static/global.css" />
+    <link rel="stylesheet" href="/static/cbox.css" />
+    <style>
+        ul#faql {
+            padding-left: 20px;
+        }
+        ul#faql li {
+            background: #ffffff;
+            border: 1px solid gray;
+            border-radius: 10px;
+            padding: 5px;
+            margin: 5px 0 5px 0;
+            display: block;
+        }
+        ul#faql li blockquote {
+            transition: 0.2s;
+        }
+        ul#faql li::marker {
+            content: '';
+        }
+        ul#faql li#loading_list span[a] {
+            user-select: all;
+            /* color: white; */
+            /* background: gray; */
+        }
+        ul#faql li div.down-btn {
+            display: inline-block;
+            position: absolute;
+            right: 40px;
+            border-radius: 50%;
+            border: 1px solid #cccccc;
+            padding: 5px;
+            font-family: Consolas monospace;
+            max-height: 10px;
+            cursor: pointer;
+        }
+        ul#faql li div.down-btn span {
+            position: relative;
+            top: -5px;
+            transition: 0.2s;
+            display: inline-block;
+        }
+        ul#faql li div.down-btn span::after {
+            content: 'v';
+        }
+        ul#faql li.open div.down-btn span {
+            rotate: 180deg;
+        }
+        ul#faql li blockquote {
+            display: none;
+        }
+        ul#faql li.open blockquote {
+            display: block;
+        }
+
+        *.caption {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    
+    <main>
+        <div class="cbox border blue">
+            <h1 style="text-align: center;">FAQs</h1>
+
+            <div>
+                <ul id="faql">
+                    <li id="loading_list">Loading FAQs...</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        fetch('faqs.json')
+        .then(function (v) {
+            return v.json();
+        })
+        .then(function (v) {
+            for (let i in v) {
+                let e = document.createElement('li');
+                let a = document.createElement('a');
+                let b = document.createElement('blockquote');
+                let d = document.createElement('div');
+                let s = document.createElement('span');
+                d.classList.add('down-btn');
+                d.tabIndex = 0;
+                d.onclick = function () {
+                    this.parentElement.classList.toggle('open');
+                };
+                d.onkeydown = function (ev) {
+                    if (ev.keyCode == 13) this.click();
+                }
+                d.append(s);
+                a.href = v[i];
+                a.append(document.createTextNode(i));
+                (async function () {
+                    let i = document.createElement('iframe');
+                    i.hidden = true;
+                    i.src = a.href;
+                    e.append(i);
+                    i.onerror = function () {
+                        i.remove();
+                        b.innerHTML = `Failed to load content`;
+                    };
+                    i.onload = function () {
+                        try {
+                            let w = i.contentWindow;
+                            void(w.prop); // Try to access iframe
+
+                            let main = w.document.querySelector('main');
+                            if (!main) throw "Invalid data";
+
+                            let d = document.createElement('div');
+                            d.innerHTML = main.innerHTML;
+                            b.append(d);
+                        }
+                        catch (err) {
+                            b.append(document.createTextNode(`Failed to load content because `));
+                            b.append(document.createTextNode(err));
+                        }
+                        finally {
+                            i.remove();
+                        }
+                    }
+                })();
+                e.append(a);
+                e.append(d);
+                e.append(b);
+                faql.append(e);
+            }
+            loading_list.remove();
+        })
+        .catch(function (v) {
+            loading_list.innerHTML = `
+            <span style="color:red">Error:&nbsp;</span>
+            <span>Cannot load FAQs because </span>
+            <span a tabindex=0></span><span>.</span>
+            `;
+            loading_list.querySelector('[a]').innerText = v;
+        });
+    </script>
+    
+    <script async src="faq-helpful-reporter"></script>
+
+</body>
+</html>

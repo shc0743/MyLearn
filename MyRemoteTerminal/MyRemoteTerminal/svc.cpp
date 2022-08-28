@@ -3,37 +3,58 @@
 #include "../../resource/tool.h"
 #include "str_table.h"
 #include "workbench/workbench.h"
+#include "workbench/PlatformResource/PlatformResource.h"
+#include "rt_user_auth.h"
 
 static SERVICE_STATUS          gSvcStatus; 
 static SERVICE_STATUS_HANDLE   gSvcStatusHandle;
 static std::wstring            gSvcName;
-static MyServiceConfig_svc     gSvcConfig;
+static MyServiceConfig_svc*    gSvcConfig;
+static HANDLE                  gSvcConfigHandle;
 static HANDLE                  gSvcConFile;
 static HANDLE                  gSvcUserFile;
 static rt_srv_config           gSrvConfig;
+static rt_srv_config*          gSrvCfgMap;
+static HANDLE                  gSrvCfgMapHandle;
+static HANDLE                  gSrvUsersMapHandle;
 static HANDLE                  gSrvProcess
 							 , gSrvProcess_pipe_in
 							 , gSrvProcess_pipe_out;
-
-std::map<std::wstring, rt_userinfo> gSrvUsers;
-unsigned long long nSrvUserCount;
+static HANDLE                  gSrvAuthProcess;
 
 static VOID WINAPI    SvcCtrlHandler( DWORD ); 
 static bool __stdcall UpdateSvcStatus();
 static void __stdcall SvcInit( DWORD, LPTSTR * ); 
 
-static DWORD WINAPI rt_srv_subprocess_loader(PVOID);
+static DWORD WINAPI rt_srv_subprocess_server_loader(PVOID);
+static DWORD WINAPI rt_srv_subprocess_authsrv_loader(PVOID);
 
 static DWORD WINAPI SvcHandle_Stop(PVOID);
 static DWORD WINAPI SvcHandle_Pause(PVOID);
 static DWORD WINAPI SvcHandle_Continue(PVOID);
 
 
-static bool rt_srv_load_users();
-
-
 void MyServiceSetName_svc(std::wstring name) {
 	gSvcName = name;
+}
+
+HANDLE MyCreateMemmap(DWORD size, DWORD hw) {
+	SECURITY_ATTRIBUTES sa{};
+	sa.bInheritHandle = TRUE;
+
+	HANDLE hMap = CreateFileMapping(
+		INVALID_HANDLE_VALUE,    // use paging file
+		&sa,                     // custom security
+		PAGE_READWRITE,          // read/write access
+		hw,                      // maximum object size (high-order DWORD)
+		size,                    // maximum object size (low-order DWORD)
+		NULL);                   // name of mapping object
+
+	if (hMap == NULL) {
+		return NULL;
+	}
+
+	return hMap;
 }
 
 static DWORD __stdcall SvcHandle_Start(PVOID) {
@@ -41,8 +62,26 @@ static DWORD __stdcall SvcHandle_Start(PVOID) {
 	using namespace std;
 
 	auto report_last_error = [](DWORD err = -1) {
-		gSvcStatus.dwCurrentState = SERVICE_STOPPED;
 		if (err == -1) err = GetLastError();
+
+		if (gSrvCfgMap) {
+			UnmapViewOfFile(gSrvCfgMap);
+		}
+		if (gSrvCfgMapHandle) {
+			CloseHandle(gSrvCfgMapHandle);
+		}
+		if (gSvcUserFile) {
+			SetHandleInformation(gSvcUserFile,
+				HANDLE_FLAG_PROTECT_FROM_CLOSE, 0);
+			CloseHandle(gSvcUserFile);
+		}
+		if (gSvcConFile) {
+			SetHandleInformation(gSvcConFile,
+				HANDLE_FLAG_PROTECT_FROM_CLOSE, 0);
+			CloseHandle(gSvcConFile);
+		}
+
+		gSvcStatus.dwCurrentState = SERVICE_STOPPED;
 		gSvcStatus.dwWin32ExitCode = err;
 		gSvcStatus.dwWaitHint = 0;
 		gSvcStatus.dwCheckPoint = 0;
@@ -54,6 +93,7 @@ static DWORD __stdcall SvcHandle_Start(PVOID) {
 	constexpr unsigned char max_retry_count = 3;
 
 	{
+#if 0
 		WCHAR Path[1024]{};
 		if (!GetWindowsDirectoryW(Path, 1023)) {
 			return report_last_error();
@@ -66,6 +106,10 @@ static DWORD __stdcall SvcHandle_Start(PVOID) {
 		if (!file_exists(szPath)) CreateDirectoryW(szPath.c_str(), 0);
 		szPath += L"\\"s + gSvcName;
 		if (!file_exists(szPath)) CreateDirectoryW(szPath.c_str(), 0);
+#else
+		wstring szPath = GetProgramDirW();
+		szPath = szPath.substr(0, szPath.find_last_of(L"\\"));
+#endif
 		if (!SetCurrentDirectoryW(szPath.c_str())) {
 			return report_last_error();
 		}
@@ -147,10 +191,21 @@ static DWORD __stdcall SvcHandle_Start(PVOID) {
 		}
 		SetHandleInformation(gSvcConFile, HANDLE_FLAG_PROTECT_FROM_CLOSE,
 			HANDLE_FLAG_PROTECT_FROM_CLOSE);
+		gSvcStatus.dwCheckPoint++;
+		UpdateSvcStatus();
+
+		gSvcConfigHandle = MyCreateMemmap(sizeof(MyServiceConfig_svc));
+		if (gSvcConfigHandle == NULL) {
+			return report_last_error();
+		}
+		gSvcConfig = (MyServiceConfig_svc*)MapViewOfFile(gSvcConfigHandle,
+			FILE_MAP_ALL_ACCESS, 0, 0, sizeof(MyServiceConfig_svc));
+		if (gSvcConfig == NULL) {
+			return report_last_error();
+		}
 
 		DWORD n = 0;
-		if (!ReadFile(gSvcConFile, &gSvcConfig, sizeof(gSvcConfig), &n, NULL)) {
-			CloseHandle(gSvcConFile);
+		if (!ReadFile(gSvcConFile, gSvcConfig, sizeof(gSvcConfig), &n, NULL)) {
 			return report_last_error();
 		}
 
@@ -158,22 +213,31 @@ static DWORD __stdcall SvcHandle_Start(PVOID) {
 	gSvcStatus.dwCheckPoint++;
 	UpdateSvcStatus();
 
-	if (!rt_srv_load_users()) {
-		if (gSvcUserFile) {
-			SetHandleInformation(gSvcUserFile, HANDLE_FLAG_PROTECT_FROM_CLOSE, 0);
-			CloseHandle(gSvcUserFile);
-		}
-		if (gSvcConFile) {
-			SetHandleInformation(gSvcConFile, HANDLE_FLAG_PROTECT_FROM_CLOSE, 0);
-			CloseHandle(gSvcConFile);
-		}
+	if (!rt_srv_load_users(&gSvcUserFile, &gSrvUsersMapHandle)) {
 		return report_last_error();
 	}
 	gSvcStatus.dwCheckPoint++;
 	UpdateSvcStatus();
 
-	gSrvConfig.lpConfig = &gSvcConfig;
+	gSrvConfig.lpConfig = NULL;
 	gSrvConfig.serviceStatus = SERVICE_RUNNING;
+	gSvcStatus.dwCheckPoint++;
+	UpdateSvcStatus();
+
+	{
+		gSrvCfgMapHandle = MyCreateMemmap(sizeof(rt_srv_config));
+
+		if (gSrvCfgMapHandle == NULL) {
+			return report_last_error();
+		}
+		gSrvCfgMap = (rt_srv_config*)MapViewOfFile(gSrvCfgMapHandle,
+			FILE_MAP_ALL_ACCESS, 0, 0, sizeof(rt_srv_config));
+
+		if (gSrvCfgMap == NULL) {
+			return report_last_error();
+		}
+		memcpy(gSrvCfgMap, &gSrvConfig, sizeof(rt_srv_config));
+	}
 	gSvcStatus.dwCheckPoint++;
 	UpdateSvcStatus();
 
@@ -181,16 +245,7 @@ static DWORD __stdcall SvcHandle_Start(PVOID) {
 		SECURITY_ATTRIBUTES sa{};
 		sa.bInheritHandle = TRUE;
 		if (!CreatePipe(&gSrvProcess_pipe_in, &gSrvProcess_pipe_out, &sa, 0)) {
-			DWORD err = GetLastError();
-			if (gSvcUserFile) {
-				SetHandleInformation(gSvcUserFile, HANDLE_FLAG_PROTECT_FROM_CLOSE, 0);
-				CloseHandle(gSvcUserFile);
-			}
-			if (gSvcConFile) {
-				SetHandleInformation(gSvcConFile, HANDLE_FLAG_PROTECT_FROM_CLOSE, 0);
-				CloseHandle(gSvcConFile);
-			}
-			return report_last_error(err);
+			return report_last_error();
 		}
 	}
 	gSvcStatus.dwCheckPoint++;
@@ -208,7 +263,9 @@ static DWORD __stdcall SvcHandle_Start(PVOID) {
 	//	}
 	//	return report_last_error();
 	//}
-	if (HANDLE h = CreateThread(0, 0, rt_srv_subprocess_loader, 0, 0, 0))
+	if (HANDLE h = CreateThread(0, 0, rt_srv_subprocess_authsrv_loader, 0, 0, 0))
+		CloseHandle(h);
+	if (HANDLE h = CreateThread(0, 0, rt_srv_subprocess_server_loader, 0, 0, 0))
 		CloseHandle(h);
 	gSvcStatus.dwCheckPoint++;
 	UpdateSvcStatus();
@@ -261,7 +318,7 @@ void __stdcall MyServiceMain_svc(DWORD, LPWSTR*) {
 
 }
 
-bool UpdateSvcStatus() {
+bool __stdcall UpdateSvcStatus() {
 	// Report the status of the service to the SCM.
 	return SetServiceStatus( gSvcStatusHandle, &gSvcStatus );
 }
@@ -295,6 +352,7 @@ VOID WINAPI SvcCtrlHandler(DWORD dwCtrl)
 	}
 
 	case SERVICE_CONTROL_STOP:
+		gSvcStatus.dwControlsAccepted = 0;
 		gSvcStatus.dwCurrentState = SERVICE_STOP_PENDING;
 		gSvcStatus.dwWin32ExitCode = 0;
 		gSvcStatus.dwCheckPoint = 0;
@@ -339,15 +397,44 @@ DWORD WINAPI SvcHandle_Stop(PVOID) {
 		//s7::CallNtTerminateProcess(gSrvProcess, 0);
 		if (gSrvProcess_pipe_out) {
 			std::string sz = "stop-server\n";
-			DWORD temp = sz.length() + 1;
+			DWORD temp = DWORD(sz.length() + 1);
 			WriteFile(gSrvProcess_pipe_out, sz.c_str(), temp, &temp, NULL);
 		}
 		CloseHandle(gSrvProcess);
-		gSvcStatus.dwCheckPoint++;
-		UpdateSvcStatus();
 	}
 	gSvcStatus.dwCheckPoint++;
 	UpdateSvcStatus();
+
+	if (gSrvAuthProcess) {
+		CloseHandle(gSrvAuthProcess);
+	}
+	gSvcStatus.dwCheckPoint++;
+	UpdateSvcStatus();
+
+	if (gSrvUsers) {
+		UnmapViewOfFile(gSrvUsers);
+	}
+	if (gSrvUsersMapHandle) {
+		CloseHandle(gSrvUsersMapHandle);
+	}
+	gSvcStatus.dwCheckPoint++;
+	UpdateSvcStatus();
+
+	if (gSrvCfgMap) {
+		gSrvCfgMap->serviceStatus = SERVICE_STOPPED;
+		UnmapViewOfFile(gSrvCfgMap);
+	}
+	if (gSrvCfgMapHandle) {
+		CloseHandle(gSrvCfgMapHandle);
+	}
+	gSvcStatus.dwCheckPoint++;
+	UpdateSvcStatus();
+
+	if (gSvcConfig)	UnmapViewOfFile(gSvcConfig);
+	if (gSvcConfigHandle) CloseHandle(gSvcConfigHandle);
+	gSvcStatus.dwCheckPoint++;
+	UpdateSvcStatus();
+
 	if (gSvcUserFile) {
 		SetHandleInformation(gSvcUserFile, HANDLE_FLAG_PROTECT_FROM_CLOSE, 0);
 		CloseHandle(gSvcUserFile);
@@ -363,8 +450,6 @@ DWORD WINAPI SvcHandle_Stop(PVOID) {
 	UpdateSvcStatus();
 
 
-	gSrvConfig.serviceStatus = SERVICE_STOPPED;
-
 	Sleep(1024);
 	gSvcStatus.dwCurrentState = SERVICE_STOPPED;
 	gSvcStatus.dwWin32ExitCode = 0;
@@ -377,7 +462,7 @@ DWORD WINAPI SvcHandle_Stop(PVOID) {
 DWORD WINAPI SvcHandle_Pause(PVOID) {
 
 
-	gSrvConfig.serviceStatus = SERVICE_PAUSED;
+	gSrvCfgMap->serviceStatus = SERVICE_PAUSED;
 
 	gSvcStatus.dwCurrentState = SERVICE_PAUSED;
 	gSvcStatus.dwWin32ExitCode = 0;
@@ -390,7 +475,7 @@ DWORD WINAPI SvcHandle_Pause(PVOID) {
 DWORD WINAPI SvcHandle_Continue(PVOID) {
 
 
-	gSrvConfig.serviceStatus = SERVICE_RUNNING;
+	gSrvCfgMap->serviceStatus = SERVICE_RUNNING;
 
 	gSvcStatus.dwCurrentState = SERVICE_RUNNING;
 	gSvcStatus.dwWin32ExitCode = 0;
@@ -401,10 +486,59 @@ DWORD WINAPI SvcHandle_Continue(PVOID) {
 }
 
 
-DWORD __stdcall rt_srv_subprocess_loader(PVOID _in) {
-	using namespace std;
+static int __stdcall rt_subprocess_loader_worker(
+	std::wstring str, HANDLE i, HANDLE o, HANDLE* p
+) {
+	STARTUPINFOW si{};
+	PROCESS_INFORMATION pi{};
+
+	si.cb = sizeof(si);
+	si.dwFlags |= (i && o) ? STARTF_USESTDHANDLES : 0;
+	si.hStdInput = i;
+	si.hStdOutput = si.hStdError = o;
 
 	DWORD code = 0;
+	PWSTR cl = new WCHAR[str.length() + 1];
+
+	wcscpy_s(cl, str.length() + 1, str.c_str());
+
+	size_t retryCount = 0;
+	time_t retryTime = 0;
+	constexpr size_t maxRetryCountIn1s = 5; // Retry 5 times in 1s
+	while ((gSvcStatus.dwCurrentState != SERVICE_STOPPED) &&
+		(gSvcStatus.dwCurrentState != SERVICE_STOP_PENDING)) {
+		if (!CreateProcessW(GetProgramDirW().c_str(), cl, NULL, NULL, TRUE,
+			CREATE_SUSPENDED, NULL, NULL, &si, &pi
+		)) {
+			if (retryTime != time(0)) {
+				retryCount = 0;
+				retryTime = time(0);
+			}
+			if (retryCount++ < maxRetryCountIn1s) continue; // retry
+
+			DWORD err = GetLastError();
+			if (err == 0) err = -1;
+			return err;
+		}
+		CloseHandle(pi.hThread);
+
+		*p = pi.hProcess;
+		Process.resume(pi.hProcess);
+		WaitForSingleObject(pi.hProcess, INFINITE);
+		GetExitCodeProcess(pi.hProcess, &code);
+
+	}
+
+	delete[] cl;
+	cl = nullptr;
+
+	return 0;
+}
+
+
+DWORD __stdcall rt_srv_subprocess_server_loader(PVOID _in) {
+	using namespace std;
+
 #if 0
 	HANDLE in = (HANDLE)_in;
 	if (!in) return 1;
@@ -415,54 +549,26 @@ DWORD __stdcall rt_srv_subprocess_loader(PVOID _in) {
 	ServiceManager.Stop(ws2s(gSvcName));
 #endif
 
-	STARTUPINFOW si{};
-	PROCESS_INFORMATION pi{};
+	wstring sc = L"ServiceSubProcess --service-sub-process --type=server ";
+	sc += L"--stdin=" + to_wstring((LONG_PTR)gSrvProcess_pipe_in) + L" "
+		L"--stdout=" + to_wstring((LONG_PTR)gSrvProcess_pipe_out) + L" "
+		L"--server-config=" + to_wstring((LONG_PTR)gSrvCfgMapHandle) + L" "
+		L"--service-config=" + to_wstring((LONG_PTR)gSvcConfigHandle) + L" ";
 
-	si.cb = sizeof(si);
-	si.dwFlags = STARTF_USESTDHANDLES;
-	si.hStdInput = gSrvProcess_pipe_in;
-	si.hStdOutput = si.hStdError = gSrvProcess_pipe_out;
+	return rt_subprocess_loader_worker(sc,
+		gSrvProcess_pipe_in, gSrvProcess_pipe_out, &gSrvProcess);
 
-	wstring sc = L"ServiceSubProcess --type=service-sub-process ";
-	sc += L"--stdin=\"" + to_wstring((LONG_PTR)gSrvProcess_pipe_in) + L"\" "
-		L"--stdout=\"" + to_wstring((LONG_PTR)gSrvProcess_pipe_out) + L"\" ";
+	return 0;
+}
 
-	PWSTR cl = new WCHAR[sc.length() + 1];
-	wcscpy_s(cl, sc.length() + 1, sc.c_str());
 
-	while ((gSvcStatus.dwCurrentState != SERVICE_STOPPED) &&
-		(gSvcStatus.dwCurrentState != SERVICE_STOP_PENDING)) {
-		if (!CreateProcessW(GetProgramDirW().c_str(), cl, NULL, NULL, TRUE,
-			CREATE_SUSPENDED, NULL, NULL, &si, &pi)) {
-			DWORD err = GetLastError();
-			delete[] cl;
-			if (gSvcUserFile) {
-				SetHandleInformation(gSvcUserFile, HANDLE_FLAG_PROTECT_FROM_CLOSE, 0);
-				CloseHandle(gSvcUserFile);
-			}
-			if (gSvcConFile) {
-				SetHandleInformation(gSvcConFile, HANDLE_FLAG_PROTECT_FROM_CLOSE, 0);
-				CloseHandle(gSvcConFile);
-			}
-			gSvcStatus.dwCurrentState = SERVICE_STOPPED;
-			gSvcStatus.dwWin32ExitCode = err;
-			gSvcStatus.dwCheckPoint = 0;
-			gSvcStatus.dwWaitHint = 0;
-			UpdateSvcStatus();
-			return err;
-		}
-		CloseHandle(pi.hThread);
+DWORD __stdcall rt_srv_subprocess_authsrv_loader(PVOID) {
+	using namespace std;
 
-		gSrvProcess = pi.hProcess;
-		Process.resume(gSrvProcess);
-		WaitForSingleObject(gSrvProcess, INFINITE);
-		GetExitCodeProcess(gSrvProcess, &code);
+	wstring sc = L"ServiceSubProcess --service-sub-process --type=auth-server ";
+	sc += L"--user=" + to_wstring((LONG_PTR)gSrvUsersMapHandle) + L" ";
 
-	}
-
-	delete[] cl;
-	cl = nullptr;
-
+	return rt_subprocess_loader_worker(sc, 0, 0, &gSrvAuthProcess);
 
 	return 0;
 }
@@ -568,67 +674,7 @@ bool rt_srv_update_resource() {
 	return true;
 }
 
-bool rt_srv_load_users() {
 
-	WCHAR ufl[256]{};
-	if (!LoadStringW(NULL, IDS_STRING_SRV_USERFILE_LOCATION, ufl, 256))
-		return false;
-
-	if (!file_exists(ufl)) {
-		gSvcUserFile = CreateFileW(ufl, FILE_ALL_ACCESS, 0, 0,
-			CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-		if (!gSvcUserFile || gSvcUserFile == INVALID_HANDLE_VALUE) {
-			return false;
-		}
-
-		DWORD temp = 0;
-		DWORD cb = sizeof(unsigned long long);
-		WriteFile(gSvcUserFile, &temp, cb, &cb, NULL);
-
-		CloseHandle(gSvcUserFile);
-	}
-
-	gSvcUserFile = CreateFileW(ufl, FILE_ALL_ACCESS, 0, 0,
-		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (!gSvcUserFile || gSvcUserFile == INVALID_HANDLE_VALUE) {
-		return false;
-	}
-	SetHandleInformation(gSvcUserFile, HANDLE_FLAG_PROTECT_FROM_CLOSE,
-		HANDLE_FLAG_PROTECT_FROM_CLOSE);
-
-	DWORD size = sizeof(unsigned long long), size2 = size;
-	if (!ReadFile(gSvcUserFile, &nSrvUserCount, size, &size2, NULL)) return false;
-	if (size2 != size) {
-		SetLastError(ERROR_INVALID_DATA);
-		return false;
-	}
-	for (unsigned long long i = 0; i < nSrvUserCount; ++i) {
-
-	}
-
-
-	return true;
-}
-
-
-#if 0
-#include <openssl/sha.h>
-std::string rt_sha256(const std::string& str) {
-	char buf[2];
-	unsigned char hash[SHA256_DIGEST_LENGTH];
-	SHA256_CTX sha256;
-	SHA256_Init(&sha256);
-	SHA256_Update(&sha256, str.c_str(), str.size());
-	SHA256_Final(hash, &sha256);
-	std::string NewString = "";
-	for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-	{
-		sprintf(buf, "%02x", hash[i]);
-		NewString = NewString + buf;
-	}
-	return NewString;
-}
-#endif
 
 
 

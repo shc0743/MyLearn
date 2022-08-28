@@ -16,6 +16,9 @@
     <Filter Include="mongoose">
       <UniqueIdentifier>{c24ce747-c93e-487c-993d-aabcee670308}</UniqueIdentifier>
     </Filter>
+    <Filter Include="资源文件\PlatformResource">
+      <UniqueIdentifier>{810325c8-3cbe-4f3e-9e41-f1ae4ff7b4e4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="win32ui.h">
@@ -42,6 +45,21 @@
     <ClInclude Include="workbench\workbench.h">
       <Filter>资源文件</Filter>
     </ClInclude>
+    <ClInclude Include="mycryp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="workbench\PlatformResource\PlatformResource.x86.h">
+      <Filter>资源文件\PlatformResource</Filter>
+    </ClInclude>
+    <ClInclude Include="workbench\PlatformResource\PlatformResource.h">
+      <Filter>资源文件\PlatformResource</Filter>
+    </ClInclude>
+    <ClInclude Include="workbench\PlatformResource\PlatformResource.x64.h">
+      <Filter>资源文件\PlatformResource</Filter>
+    </ClInclude>
+    <ClInclude Include="rt_user_auth.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="version_rc.rc">
@@ -52,6 +70,12 @@
     </ResourceCompile>
     <ResourceCompile Include="workbench\workbench.rc">
       <Filter>资源文件</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="workbench\PlatformResource\PlatformResource.x64.rc">
+      <Filter>资源文件\PlatformResource</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="workbench\PlatformResource\PlatformResource.x86.rc">
+      <Filter>资源文件\PlatformResource</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
@@ -74,6 +98,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="svc_subprocess.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mycryp.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rt_user_auth.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

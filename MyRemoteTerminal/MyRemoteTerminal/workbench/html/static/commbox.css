@@ -1,0 +1,30 @@
+
+
+.cbox {
+    background: var(--background);
+    padding: 5px 20px;
+    overflow: auto;
+}
+.cbox.blue {
+    /* background: linear-gradient(to right bottom, rgba(171, 205, 239, 0.3), rgba(221, 238, 255, 0.5)); */
+    background: #e7f1fb;
+}
+.cbox.gray {
+    background: #f0f0f0;
+}
+.cbox.border {
+    border: 3px ridge var(--border-color);
+}
+.cbox.border.blue {
+    border: 3px ridge #89abcd;
+}
+.cbox.text-center {
+    text-align: center;
+}
+.cbox.center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+

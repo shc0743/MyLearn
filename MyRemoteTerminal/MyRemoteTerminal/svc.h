@@ -18,6 +18,8 @@ public:
 
 };
 
+HANDLE MyCreateMemmap(DWORD size, DWORD hw = 0);
+
 void MyServiceSetName_svc(std::wstring name);
 void WINAPI MyServiceMain_svc(
 	DWORD   dwNumServicesArgs,
@@ -27,7 +29,5 @@ int rt_svc_ServiceSubProcessHandler(CmdLineW& cl);
 
 bool rt_srv_checkupd_resource();
 bool rt_srv_update_resource();
-
-std::string rt_sha256(const std::string& str);
 
 
