@@ -48,7 +48,7 @@
 
             navigator.sendBeacon('/api/faq/helpful-report/report', str);
 
-            elem.innerHTML = `Thanks for your vote.`;
+            elem.innerHTML = `Thanks for your feedback.`;
             setTimeout(function () {
                 elem.remove();
             }, 3000);

@@ -59,9 +59,6 @@
     <ClCompile Include="..\lib\mongoose\mongoose.c">
       <Filter>mongoose</Filter>
     </ClCompile>
-    <ClCompile Include="..\MyRemoteTerminal\mycryp.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="rt_server_api_handler.rc">

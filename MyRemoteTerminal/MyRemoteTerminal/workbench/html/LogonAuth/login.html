@@ -6,28 +6,97 @@
     <title>Login - My Remote Terminal</title>
     <!--link rel="stylesheet" href="login_page.css" /-->
     <link rel="stylesheet" href="/static/global.css" />
+    <link rel="stylesheet" href="/static/cbox.css" />
     <script src="/static/ModalElement.js"></script>
     <style>
         body {
             font-family: Consolas, monospace;
         }
-    
-        .main {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(to right bottom, rgba(171, 205, 239, 0.3), rgba(221, 238, 255, 0.5));
-            padding: 5px 20px;
-            max-width: 60%;
-            max-height: 60%;
-            overflow: auto;
+
+        #main {
             text-align: center;
-            border: 3px ridge #89abcd;
+            border: 1px solid #aaa;
+            border-radius: 20px;
+            background: var(--background);
+            overflow: auto;
+            max-width: calc(100% - 4em);
+            max-height: calc(100% - 4em);
+
+            --background: #FCFCFC;
+        }
+        #main,
+        #main button,
+        #main input {
+            font-size: 1.0rem;
+        }
+
+        #main label > span, #main label > input {
+            text-align: initial;
         }
 
         #main .input_box > * {
-            margin: 5px 0;
+            margin: 10px 0;
+        }
+        #main .input_box > div > label {
+            display: flex;
+            flex-direction: column;
+        }
+        #main .input_box input {
+            border-radius: 10px;
+            padding: 10px;
+            line-height: 1em;
+            transition: 0.2s;
+            /* width: 30rem; */
+
+            border: 1px solid var(--border-color);
+
+            --border-color: #aaa;
+        }
+        @media screen and (min-width: 36rem) {
+            #main .input_box input {
+                width: 30rem;
+            }
+        }
+        #main .input_box input:hover {
+            background-color: var(--win32-dialog-background-color);
+        }
+        #main .input_box input {
+            outline: none;
+        }
+        #main .input_box input:focus {
+            --border-color: #ff596a;
+        }
+        #main .input_box *.invalid input {
+            --border-color: #ff596a;
+        }
+        #main .input_box input:valid {
+            --border-color: #2ba186;
+        }
+        #main .input_box label.invalid::after {
+            content: "* Invalid content";
+            display: block;
+            color: #ff596a;
+            text-align: left;
+            margin-bottom: 0.5rem;
+        }
+
+        #main .btn-login button {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            transition: 0.2s;
+        }
+        #main .btn-login button:hover {
+            background-color: #E9E9E9;
+        }
+
+
+    </style>
+
+    <style>
+        :root {
+            --win32-dialog-background-color: #F0F0F0;
         }
     </style>
 </head>
@@ -36,7 +105,7 @@
     <noscript>Please enable JavaScript to access this website.</noscript>
 
     <main>
-        <div id="main" class="main" style="display: none;">
+        <div id="main" class="cbox center" style="display: none;">
 
             <form class="login_box" id="login_box" method="post">
                 <h1>Login</h1>
@@ -45,14 +114,14 @@
                     <div data-type="username">
                         <label>
                             <span>Username</span>
-                            <input type="text" name="username">
+                            <input required type="text" name="username">
                         </label>
                     </div>
 
                     <div data-type="password">
                         <label>
                             <span>Password</span>
-                            <input type="password" name="password">
+                            <input required type="password" name="password">
                         </label>
                     </div>
                 </div>
@@ -64,10 +133,9 @@
                 <input type="hidden" name="PasswordEncrypted" />
                 <input type="hidden" name="PasswordEncryptAlgorithm" />
 
-                <div class="box btn-login" style="margin:15px 5px 10px 5px">
+                <div class="box btn-login" style="margin:15px 5px 10px 5px;display:flex;flex-direction:column;">
                     <button type="submit">Login</button>
-                    <span class="space"></span>
-                    <button type="reset">Cancel</button>
+                    <button type="reset" title="Reset">Cancel</button>
                 </div>
 
             </form>
@@ -76,6 +144,37 @@
     </main>
 
     <script src="login.auth.js"></script>
+    <script>
+        fetch('/api/auth/api/GetUserCount')
+        .then(v=>{return(v.text())})
+        .then(v=>{
+            if (v == '0') {
+                var m = new ModalElement();
+                m.element.classList.add('cbox');
+                m.element.classList.add('border');
+                m.element.setAttribute('style', '--background:white;--border-color:#d00');
+                m.element.innerHTML = `
+                <h1 style="text-align:center">No user exists</h1>
+                <div style="text-indent:2em">
+                    <div>After query, we did not find the user account in the current server. </div>
+                    <div>It seems that you have not configured the server correctly.</div>
+                    <div>If so, please click <a href="/faq/no-user-exists.html">me</a> to check the FAQ.</div>
+                    <div>Or, you can also click <a href="javascript:" i>me</a> to ignore.</div>
+                </div><p></p>
+                `;
+                m.element.querySelector('a[i]').onclick = function () {
+                    m.close();
+                };
+                document.getElementById('login_box').addEventListener('submit', e => {
+                    e.preventDefault();
+                    m.showModal();
+                    return false;
+                })
+                m.showModal();
+            }
+        })
+        .catch(()=>{});
+    </script>
     
 </body>
 </html>

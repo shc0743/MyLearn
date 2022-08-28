@@ -1,8 +1,7 @@
 @echo off
 Cd /d "%~dp0"
-set svc=MyRemoteTerminalService_dce5be09
-sc stop "%svc%"
-call pack-update_version
-call pack
+set svc=My Remote Terminal
 timeout/t 10
-sc start "%svc%"
+..\..\bin\myremoteterminal64 --type=update --updateSource="..\..\bin\myremoteterminal64.exe" --targetService="%svc%"
+echo %ERRORLEVEL%
+timeout 5
