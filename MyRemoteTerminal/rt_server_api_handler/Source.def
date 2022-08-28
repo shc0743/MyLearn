@@ -1,0 +1,6 @@
+LIBRARY
+
+EXPORTS
+	InitialFunctionsEntry
+	rt_srv_api_handler
+

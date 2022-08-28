@@ -1,0 +1,8 @@
+{
+    "What is My Remote Tool?" : "what-is-my-remote-tool.html",
+    "What is the license of the project?": "/static/license.html",
+    "How to login?": "how-to-login.html",
+    "How to register?": "how-to-register.html",
+    "Forgot password?": "/api/passwordrecovery/faq",
+    "No user account exists?": "no-user-exists.html"
+}

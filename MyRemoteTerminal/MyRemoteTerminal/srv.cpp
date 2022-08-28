@@ -2,6 +2,8 @@
 #include "../lib/mongoose/mongoose.h"
 #include "../../resource/tool.h"
 #include "str_table.h"
+#include "mycryp.h"
+#include "rt_user_auth.h"
 
 static rt_srv_config* rt_config;
 static std::map<std::string, std::string> http_file_mapping;
@@ -10,7 +12,6 @@ static void rt_srv_load_file_mapping();
 static bool rt_srv_validate_config(rt_srv_config* config);
 static void rt_srv_handler(struct mg_connection*, int, void*, void*);
 static void rt_srv_apihandler(struct mg_connection*, int, void*, void*);
-static rt_userinfo rt_LogonUser(std::wstring username, std::wstring password_enc);
 
 #if 0
 #define MY_RT_SRV_DEBUG_INFO(x) (x)
@@ -46,7 +47,7 @@ DWORD __stdcall rt_srv_main(PVOID config) {
 
 bool rt_srv_validate_config(rt_srv_config* config) {
 	if (config->cbSize == 0) return false;
-	if (config->lpConfig == 0) return false;
+	//if (config->lpConfig == 0) return false;
 	return true;
 }
 
@@ -57,31 +58,23 @@ void rt_srv_load_file_mapping() {
 	char buffer[2048]{};
 	string s;
 
-	fp.open("resources/http_file_mapping.txt", ios::in);
-	if (fp) {
-		while (fp.getline(buffer, 2048)) {
-			s = buffer;
-			if (s.find("=") == string::npos) continue;
-			pair<string, string> p;
-			p.second = s.substr(s.find_first_of("=") + 1);
-			p.first = s.erase(s.find_first_of("="));
-			http_file_mapping.insert(p);
+	auto _lfm = [&](string file, map<string, string>& var) {
+		fp.open(file, ios::in);
+		if (fp) {
+			while (fp.getline(buffer, 2048)) {
+				s = buffer;
+				if (s.find("=") == string::npos) continue;
+				pair<string, string> p;
+				p.second = s.substr(s.find_first_of("=") + 1);
+				p.first = s.erase(s.find_first_of("="));
+				var.insert(p);
+			}
+			fp.close();
 		}
-		fp.close();
-	}
+	};
 
-	fp.open("resources/http_file_mapping-auth_required.txt", ios::in);
-	if (fp) {
-		while (fp.getline(buffer, 2048)) {
-			s = buffer;
-			if (s.find("=") == string::npos) continue;
-			pair<string, string> p;
-			p.second = s.substr(s.find_first_of("=") + 1);
-			p.first = s.erase(s.find_first_of("="));
-			http_file_mapping_authreq.insert(p);
-		}
-		fp.close();
-	}
+	_lfm("resources/http_file_mapping.txt", http_file_mapping);
+	_lfm("resources/http_file_mapping-auth_required.txt", http_file_mapping_authreq);
 
 }
 
@@ -110,15 +103,22 @@ void rt_srv_handler(mg_connection* c, int ev, void* ev_data, void* fn_data) {
 
 		for (auto& i : http_file_mapping) {
 			if (mg_http_match_uri(hm, i.first.c_str())) {
-				MY_RT_SRV_DEBUG_INFO(system(("echo [%date%_%time%] Serve file:"
-					+ i.first + " >> srv.log").c_str()));
-				mg_http_serve_file(c, hm, i.second.c_str(), &opts);
+				if (i.second.substr(0, 9) == "redirect:" && i.second.length() > 9) {
+					mg_printf(c, "HTTP/1.1 301 Moved Permanently\r\n"
+						"Content-Length: 0\r\n"
+						"Location: %s\r\n\r\n", i.second.substr(9));
+				}
+				else if (i.second.substr(0, 5) == "goto:" && i.second.length() > 5) {
+					mg_printf(c, "HTTP/1.1 302 Found\r\n"
+						"Content-Length: 0\r\n"
+						"Location: %s\r\n\r\n", i.second.substr(5));
+				}
+				else {
+					mg_http_serve_file(c, hm, i.second.c_str(), &opts);
+				}
 				return;
 			}
 		}
-
-		MY_RT_SRV_DEBUG_INFO(system((std::string("echo [%date%_%time%] 404 file:")
-			+ hm->uri.ptr + " >> srv.log").c_str()));
 
 		my_http_serve_file(c, hm, "html/error/not_found.html",
 			&opts, 404, 0);
@@ -126,19 +126,17 @@ void rt_srv_handler(mg_connection* c, int ev, void* ev_data, void* fn_data) {
 }
 
 void rt_srv_apihandler(mg_connection* c, int ev, void* ev_data, void* fn_data) {
-	struct mg_http_message* hm = (struct mg_http_message*)ev_data;
-	struct mg_http_serve_opts opts = {};
-	if (mg_http_match_uri(hm, "/api/test")) {
-		// Attempt to fetch parameters from the body, hm->body
-		struct mg_str params = hm->body;
+	HMODULE m = GetModuleHandle(TEXT("rsah.dll"));
+	if (m) {
+		typedef void(__stdcall* t)(mg_connection*, int, void*, void*);
+		t f = (t)GetProcAddress(m, "rt_srv_api_handler");
+		if (f) {
+			f(c, ev, ev_data, fn_data);
+		}
 
-		mg_http_reply(c, 200, NULL, "This is a test!");
 		return;
 	}
-
-
-	my_http_serve_file(c, hm, "html/error/not_found.html",
-		&opts, 404, 0);
+	mg_http_reply(c, 500, NULL, "");
 }
 
 

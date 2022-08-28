@@ -2,7 +2,6 @@
 // Microsoft Visual C++ 生成的包含文件。
 // 供 workbench.rc 使用
 //
-#define IDR_BIN_7z                      3101
 #define IDR_BIN_HTMLPACK                3102
 
 // Next default values for new objects
