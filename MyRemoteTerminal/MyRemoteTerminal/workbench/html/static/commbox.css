@@ -7,10 +7,10 @@
 }
 .cbox.blue {
     /* background: linear-gradient(to right bottom, rgba(171, 205, 239, 0.3), rgba(221, 238, 255, 0.5)); */
-    background: #e7f1fb;
+    --background: #e7f1fb;
 }
 .cbox.gray {
-    background: #f0f0f0;
+    --background: #f0f0f0;
 }
 .cbox.border {
     border: 3px ridge var(--border-color);

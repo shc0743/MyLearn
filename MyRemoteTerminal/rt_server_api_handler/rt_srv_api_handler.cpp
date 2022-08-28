@@ -42,6 +42,7 @@ void __stdcall rt_srv_api_handler(mg_connection* c, int ev, void* ev_data, void*
 		return;
 	}
 
+#if 0
 	if (mg_http_match_uri(hm, "/api/crypto/sha256")) {
 		struct mg_str params = hm->query;
 		if (params.len < 3 /* Min: a=b */) {
@@ -60,6 +61,7 @@ void __stdcall rt_srv_api_handler(mg_connection* c, int ev, void* ev_data, void*
 			+ "\r\n\r\n" + str).c_str());
 		return;
 	}
+#endif
 
 	if (mg_http_match_uri(hm, "/api/faq/helpful-report/report")) {
 		struct mg_str params = hm->body;

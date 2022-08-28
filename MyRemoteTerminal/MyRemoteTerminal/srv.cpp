@@ -104,14 +104,18 @@ void rt_srv_handler(mg_connection* c, int ev, void* ev_data, void* fn_data) {
 		for (auto& i : http_file_mapping) {
 			if (mg_http_match_uri(hm, i.first.c_str())) {
 				if (i.second.substr(0, 9) == "redirect:" && i.second.length() > 9) {
-					mg_printf(c, "HTTP/1.1 301 Moved Permanently\r\n"
+					MY_RT_SRV_DEBUG_INFO(system(("echo [%date%_%time%] Redirect: " +
+						i.first + " -^> " + i.second+" >> srv.log").c_str()));
+					mg_printf(c, ("HTTP/1.1 301 Moved Permanently\r\n"
 						"Content-Length: 0\r\n"
-						"Location: %s\r\n\r\n", i.second.substr(9));
+						"Location: " + i.second.substr(9) +"\r\n\r\n").c_str());
 				}
 				else if (i.second.substr(0, 5) == "goto:" && i.second.length() > 5) {
-					mg_printf(c, "HTTP/1.1 302 Found\r\n"
+					MY_RT_SRV_DEBUG_INFO(system(("echo [%date%_%time%] Redirect (302): "
+						+ i.first + " -^> " + i.second+" >> srv.log").c_str()));
+					mg_printf(c, ("HTTP/1.1 302 Found\r\n"
 						"Content-Length: 0\r\n"
-						"Location: %s\r\n\r\n", i.second.substr(5));
+						"Location: " + i.second.substr(5) + "\r\n\r\n").c_str());
 				}
 				else {
 					mg_http_serve_file(c, hm, i.second.c_str(), &opts);

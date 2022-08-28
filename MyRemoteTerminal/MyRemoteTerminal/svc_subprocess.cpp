@@ -43,7 +43,7 @@ static DWORD WINAPI SubprocessTerminateOnParentExit(PVOID) {
 	if (!pid) return ERROR_NOT_FOUND;
 	HANDLE p = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, FALSE, pid);
 	if (!p) return GetLastError();
-
+	
 	WaitForSingleObject(p, INFINITE);
 	GetExitCodeProcess(p, &pid);
 	CloseHandle(p);

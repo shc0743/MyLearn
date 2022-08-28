@@ -15,6 +15,11 @@
         z-index: 80;
         background: black;
     }
+    .${classn_ModalElementRoot} {
+        /*z-index: 81;*/
+        padding: 0;
+        border: 0;
+    }
     .${classn_ModalElementChild} {
         position: fixed;
         left: 50%;
@@ -24,20 +29,79 @@
         background: white;
         border: 1px solid #aaa;
         padding: 5px;
+        overflow: auto;
+        max-width: 100%;
+        max-height: 100%;
     }
     `;
-    (document.head||document.body||document.documentElement).append(style1);
+    (document.head || document.body || document.documentElement).append(style1);
+    
+    const dialogValid = (function () {
+        const elem = document.createElement('dialog');
+        if (typeof (elem.show) !== 'undefined') return true;
+        return false;
+    }());
 
     window.ModalElement = function () {
-        this.root = document.createElement('div');
+        this.root = document.createElement(dialogValid ? 'dialog' : 'div');
         this.root.hidden = true;
-        document.body.append(this.root);
-        this.__elModal = document.createElement('div');
-        this.__elModal.classList.add(classn_modal);
-        this.root.append(this.__elModal);
         this.element = document.createElement('div');
-        this.element.classList.add(classn_ModalElementChild);
+
+        if (dialogValid) {
+            this.__elModal = null;
+            this.root.classList.add(classn_ModalElementRoot);
+        } else {
+            this.__elModal = document.createElement('div');
+            this.__elModal.classList.add(classn_modal);
+            this.root.append(this.__elModal);
+            this.element.classList.add(classn_ModalElementChild);
+        }
         this.root.append(this.element);
+
+        this.show = function () {
+            this.root.hidden = false;
+            if (dialogValid) {
+                return this.root.show();
+            }
+            this.__elModal.hidden = true;
+            return true;
+        }
+        this.showModal = function () {
+            this.root.hidden = false;
+            if (dialogValid) {
+                return this.root.showModal();
+            }
+            return true;
+        }
+        this.close = function () {
+            if (dialogValid) {
+                return this.root.close();
+            }
+            this.__elModal.hidden = false;
+            this.root.hidden = true;
+            return true;
+        }
+        let _this = this;
+        Object.defineProperty(this, 'open', {
+            get() {
+                if (dialogValid) {
+                    return (_this.root.open);
+                } else {
+                    return (!_this.root.hidden);
+                }
+            },
+            set(val) {
+                _this.root.hidden = !val;
+                if (dialogValid) {
+                    return (_this.root.open = val);
+                }
+                return true;
+            },
+            enumerable: true,
+            configurable: true
+        })
+
+        document.body.append(this.root);
     }
 
     window.ModalConfirmBox = function (text, yes = 'OK', no = 'Cancel') {
@@ -86,7 +150,7 @@
             });
         }
         this.destroy = function () {
-            this.__mdel.root.remove();
+            this.__mdel.close();
         }
     }
 
