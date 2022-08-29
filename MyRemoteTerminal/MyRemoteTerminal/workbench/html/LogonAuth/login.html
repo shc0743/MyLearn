@@ -63,9 +63,7 @@
         #main .input_box input {
             outline: none;
         }
-        #main .input_box input:focus {
-            --border-color: #ff596a;
-        }
+        #main .input_box input:focus,
         #main .input_box *.invalid input {
             --border-color: #ff596a;
         }
@@ -108,9 +106,11 @@
         <div id="main" class="cbox center" style="display: none;">
 
             <form class="login_box" id="login_box" method="post">
-                <h1>Login</h1>
+                <section>
+                    <h1>Login</h1>
+                </section>
 
-                <div class="input_box">
+                <section class="input_box">
                     <div data-type="username">
                         <label>
                             <span>Username</span>
@@ -124,19 +124,19 @@
                             <input required type="password" name="password">
                         </label>
                     </div>
-                </div>
+                </section>
 
-                <div class="iForgotMyPassword">
+                <section class="iForgotMyPassword">
                     <a id="iForgotMyPassword" href="#">I Forgot My Password</a>
-                </div>
+                </section>
 
                 <input type="hidden" name="PasswordEncrypted" />
                 <input type="hidden" name="PasswordEncryptAlgorithm" />
 
-                <div class="box btn-login" style="margin:15px 5px 10px 5px;display:flex;flex-direction:column;">
+                <section class="box btn-login" style="margin:15px 5px 10px 5px;display:flex;flex-direction:column;">
                     <button type="submit">Login</button>
                     <button type="reset" title="Reset">Cancel</button>
-                </div>
+                </section>
 
             </form>
 
@@ -156,7 +156,7 @@
                 m.element.innerHTML = `
                 <h1 style="text-align:center">No user exists</h1>
                 <div style="text-indent:2em">
-                    <div>After query, we did not find the user account in the current server. </div>
+                    <div>After query, we did not find any user account in the current server. </div>
                     <div>It seems that you have not configured the server correctly.</div>
                     <div>If so, please click <a href="/faq/no-user-exists.html">me</a> to check the FAQ.</div>
                     <div>Or, you can also click <a href="javascript:" i>me</a> to ignore.</div>

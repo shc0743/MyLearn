@@ -26,6 +26,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
 
 IDR_BIN_7z_x64          BIN                     "workbench\\7za64.exe"
 IDR_BIN_rsah_x64        BIN                     "..\\lib\\dllcache\\rt_server_api_handler_x64.dll"
+IDR_BIN_rauth_x64       BIN                     "..\\lib\\dllcache\\rt_auth_x64.dll"
 
 #endif    // 非特定语言(默认值) resources
 /////////////////////////////////////////////////////////////////////////////

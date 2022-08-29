@@ -138,13 +138,30 @@ static int rt_srv_han(CmdLineW& cl) {
 }
 static int rt_authsrv(CmdLineW& cl) {
 
+	extern HINSTANCE hInst;
+	wstring svcname;
+
+	if (1 != cl.getopt(L"service-name", svcname)) return ERROR_INVALID_PARAMETER;
+
+	if (!FreeResFile(IDR_BIN_rauth, "BIN", "rauth.dll", hInst)) {
+		return GetLastError();
+	}
+	HMODULE hauth = LoadLibrary(TEXT("rauth.dll"));
+	if (!hauth) {
+		return GetLastError();
+	}
+
 	if (HANDLE $ = CreateThread(0, 0, SubprocessTerminateOnParentExit, 0, 0, 0))
 		CloseHandle($);
 
-	// TODO
-	Sleep(INFINITE);
+	constexpr auto EntryName = "rt_AuthorizationServerEntry";
+	
+	typedef int(__stdcall* _Ty)(PCWSTR lpszServiceName);
+	_Ty _MyFunc = (_Ty)GetProcAddress(hauth, EntryName);
+	if (!_MyFunc) return GetLastError();
+	return _MyFunc(svcname.c_str());
 
-	return 0;
+	//return 0;
 }
 
 int rt_svc_ServiceSubProcessHandler(CmdLineW& cl) {
