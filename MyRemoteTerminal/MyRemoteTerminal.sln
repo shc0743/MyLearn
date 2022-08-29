@@ -6,9 +6,12 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MyRemoteTerminal", "MyRemoteTerminal\MyRemoteTerminal.vcxproj", "{A679FF84-C836-4FCB-B80C-2574498C1E21}"
 	ProjectSection(ProjectDependencies) = postProject
 		{AF51B07A-4F01-41E1-ADB3-2BAAA59A565D} = {AF51B07A-4F01-41E1-ADB3-2BAAA59A565D}
+		{B1B18152-1F0E-4B0E-A0DD-407DDAF8CF84} = {B1B18152-1F0E-4B0E-A0DD-407DDAF8CF84}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rt_server_api_handler", "rt_server_api_handler\rt_server_api_handler.vcxproj", "{AF51B07A-4F01-41E1-ADB3-2BAAA59A565D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rt_auth", "rt_auth\rt_auth.vcxproj", "{B1B18152-1F0E-4B0E-A0DD-407DDAF8CF84}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,6 +37,14 @@ Global
 		{AF51B07A-4F01-41E1-ADB3-2BAAA59A565D}.Release|x64.Build.0 = Release|x64
 		{AF51B07A-4F01-41E1-ADB3-2BAAA59A565D}.Release|x86.ActiveCfg = Release|Win32
 		{AF51B07A-4F01-41E1-ADB3-2BAAA59A565D}.Release|x86.Build.0 = Release|Win32
+		{B1B18152-1F0E-4B0E-A0DD-407DDAF8CF84}.Debug|x64.ActiveCfg = Debug|x64
+		{B1B18152-1F0E-4B0E-A0DD-407DDAF8CF84}.Debug|x64.Build.0 = Debug|x64
+		{B1B18152-1F0E-4B0E-A0DD-407DDAF8CF84}.Debug|x86.ActiveCfg = Debug|Win32
+		{B1B18152-1F0E-4B0E-A0DD-407DDAF8CF84}.Debug|x86.Build.0 = Debug|Win32
+		{B1B18152-1F0E-4B0E-A0DD-407DDAF8CF84}.Release|x64.ActiveCfg = Release|x64
+		{B1B18152-1F0E-4B0E-A0DD-407DDAF8CF84}.Release|x64.Build.0 = Release|x64
+		{B1B18152-1F0E-4B0E-A0DD-407DDAF8CF84}.Release|x86.ActiveCfg = Release|Win32
+		{B1B18152-1F0E-4B0E-A0DD-407DDAF8CF84}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

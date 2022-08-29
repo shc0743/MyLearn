@@ -4,6 +4,7 @@
 //
 #define IDR_BIN_7z_x86                  3103
 #define IDR_BIN_rsah_x86                3104
+#define IDR_BIN_rauth_x86               3105
 
 // Next default values for new objects
 // 

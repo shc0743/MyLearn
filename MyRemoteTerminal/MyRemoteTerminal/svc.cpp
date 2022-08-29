@@ -566,7 +566,8 @@ DWORD __stdcall rt_srv_subprocess_authsrv_loader(PVOID) {
 	using namespace std;
 
 	wstring sc = L"ServiceSubProcess --service-sub-process --type=auth-server ";
-	sc += L"--user=" + to_wstring((LONG_PTR)gSrvUsersMapHandle) + L" ";
+	sc += L"--user=" + to_wstring((LONG_PTR)gSrvUsersMapHandle) + L" "
+		L"--service-name=\"" + gSvcName + L"\" ";
 
 	return rt_subprocess_loader_worker(sc, 0, 0, &gSrvAuthProcess);
 

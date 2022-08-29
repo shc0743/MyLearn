@@ -90,6 +90,12 @@ void __stdcall rt_srv_api_handler(mg_connection* c, int ev, void* ev_data, void*
 		return;
 	}
 
+	if (mg_http_match_uri(hm, "/api/auth/passwordrecovery/faq")) {
+		mg_http_serve_file(c, hm, "html/LogonAuth/passwdrecovery.htm", &opts);
+
+		return;
+	}
+
 	if (mg_http_match_uri(hm, "/api/test")) {
 		// Attempt to fetch parameters from the body, hm->body
 		struct mg_str params = hm->body;

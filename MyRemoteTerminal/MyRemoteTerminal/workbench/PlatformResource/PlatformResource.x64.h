@@ -4,6 +4,7 @@
 //
 #define IDR_BIN_7z_x64                  3103
 #define IDR_BIN_rsah_x64                3104
+#define IDR_BIN_rauth_x64               3105
 
 // Next default values for new objects
 // 
