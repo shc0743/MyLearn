@@ -441,20 +441,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			long w = rc.right - rc.left, h = rc.bottom - rc.top;
 
 			SetWindowPos(data->_1_1, 0, 10, 12, 160, 20, 0);
-			SetWindowPos(data->_1_2, 0, 170, 10, w-255, 25, 0);
-			SetWindowPos(data->_1_3, 0, w-75, 10, 70, 25, 0);
+			SetWindowPos(data->_1_2, 0, 170, 10, w-260, 25, 0);
+			SetWindowPos(data->_1_3, 0, w-80, 10, 70, 25, 0);
 
-			SetWindowPos(data->_2_1, 0, 10, 45, w-15, 1, 0);
+			SetWindowPos(data->_2_1, 0, 10, 45, w-20, 1, 0);
 
-			SetWindowPos(data->_3_1, 0, 10, 55, w-15, h-100, 0);
+			SetWindowPos(data->_3_1, 0, 10, 55, w-20, h-100, 0);
 
 			//SetWindowPos(data->_4_1, 0, 10, h-40, w-15, 1, 0);
 
-			SetWindowPos(data->_5_5, 0, w-65, h-35, 60, 25, 0);
-			SetWindowPos(data->_5_4, 0, w-135, h-35, 60, 25, 0);
-			SetWindowPos(data->_5_3, 0, w-205, h-35, 60, 25, 0);
-			SetWindowPos(data->_5_2, 0, w-275, h-35, 60, 25, 0);
-			SetWindowPos(data->_5_1, 0, w-345, h-35, 60, 25, 0);
+			SetWindowPos(data->_5_5, 0, w-70, h-35, 60, 25, 0);
+			SetWindowPos(data->_5_4, 0, w-140, h-35, 60, 25, 0);
+			SetWindowPos(data->_5_3, 0, w-210, h-35, 60, 25, 0);
+			SetWindowPos(data->_5_2, 0, w-280, h-35, 60, 25, 0);
+			SetWindowPos(data->_5_1, 0, w-350, h-35, 60, 25, 0);
 
 		}
 		return DefWindowProc(hWnd, message, wParam, lParam);
@@ -624,6 +624,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 						to_wstring(GetLastError()).c_str(),
 						TDCBF_CANCEL_BUTTON, TD_ERROR_ICON, 0);
 				}
+				data->unsavedChanges = false;
+				SetWindowTextW(hWnd, (L"[File saved.] "s + szTitle).c_str());
+				SetTimer(hWnd, 0xB081, 2000, 0);
+
 				SetWindowTextW(data->_1_2, pub_buffer);
 				TaskDialog(hWnd, 0, L"OK", LastErrorStrW().c_str(), 
 					to_wstring(GetLastError()).c_str(), 
