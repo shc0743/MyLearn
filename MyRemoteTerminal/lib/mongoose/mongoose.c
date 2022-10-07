@@ -5949,15 +5949,75 @@ void my_http_serve_file(struct mg_connection* c, struct mg_http_message* hm,
                 fs->sk(fd->fd, (size_t)r1);
             }
         }
-        if (text == NULL) text = mg_http_status_code_str(status);
         mg_printf(c,
             "HTTP/1.1 %d %s\r\n"
             "Content-Type: %.*s\r\n"
             "Etag: %s\r\n"
             "Content-Length: %llu\r\n"
             "%s%s\r\n",
-            status, text, (int)mime.len, mime.ptr,
+            status, (text), (int)mime.len, mime.ptr,
             etag, cl, range, opts->extra_headers ? opts->extra_headers : "");
+        if (mg_vcasecmp(&hm->method, "HEAD") == 0) {
+            c->is_draining = 1;
+            mg_fs_close(fd);
+        }
+        else {
+            c->pfn = static_cb;
+            c->pfn_data = fd;
+            *(size_t*)c->label = (size_t)cl;  // Track to-be-sent content length
+        }
+    }
+
+}
+void my_http_serve_file_noEtag(struct mg_connection* c, struct mg_http_message* hm,
+    const char* path,
+    const struct mg_http_serve_opts* opts, int code_, const char* text) {
+    struct mg_fs* fs = opts->fs == NULL ? &mg_fs_posix : opts->fs;
+    struct mg_fd* fd = mg_fs_open(fs, path, MG_FS_READ);
+    size_t size = 0;
+    time_t mtime = 0;
+    struct mg_str* inm = NULL;
+
+    if (fd == NULL || fs->st(path, &size, &mtime) == 0) {
+        MG_DEBUG(("404 [%s] %p", path, (void*)fd));
+        mg_http_reply(c, 404, "", "%s", "Not found\n");
+        mg_fs_close(fd);
+        // NOTE: mg_http_etag() call should go first!
+    }
+    else {
+        int n, status = code_;
+        char range[100] = "";
+        int64_t r1 = 0, r2 = 0, cl = (int64_t)size;
+        struct mg_str mime = guess_content_type(mg_str(path), opts->mime_types);
+
+        // Handle Range header
+        struct mg_str* rh = mg_http_get_header(hm, "Range");
+        if (rh != NULL && (n = getrange(rh, &r1, &r2)) > 0 && r1 >= 0 && r2 >= 0) {
+            // If range is specified like "400-", set second limit to content len
+            if (n == 1) r2 = cl - 1;
+            if (r1 > r2 || r2 >= cl) {
+                status = 416;
+                cl = 0;
+                mg_snprintf(range, sizeof(range), "Content-Range: bytes */%lld\r\n",
+                    (int64_t)size);
+            }
+            else {
+                status = 206;
+                cl = r2 - r1 + 1;
+                mg_snprintf(range, sizeof(range),
+                    "Content-Range: bytes %lld-%lld/%lld\r\n", r1, r1 + cl - 1,
+                    (int64_t)size);
+                fs->sk(fd->fd, (size_t)r1);
+            }
+        }
+        if (text == NULL) text = mg_http_status_code_str(status);
+        mg_printf(c,
+            "HTTP/1.1 %d %s\r\n"
+            "Content-Type: %.*s\r\n"
+            "Content-Length: %llu\r\n"
+            "%s%s\r\n",
+            status, text, (int)mime.len, mime.ptr,
+            cl, range, opts->extra_headers ? opts->extra_headers : "");
         if (mg_vcasecmp(&hm->method, "HEAD") == 0) {
             c->is_draining = 1;
             mg_fs_close(fd);

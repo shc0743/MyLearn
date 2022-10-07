@@ -27,6 +27,9 @@
     <ClInclude Include="resource.h">
       <Filter>资源文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\MyRemoteTerminal\mycryp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -36,6 +39,12 @@
       <Filter>useless</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\resource\tool.cpp">
+      <Filter>资源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MyRemoteTerminal\mycryp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

@@ -52,18 +52,25 @@ static DWORD WINAPI SubprocessTerminateOnParentExit(PVOID) {
 	return 0; //?
 }
 
+extern HINSTANCE hInst;
+
 static int rt_srv_han(CmdLineW& cl) {
 
 	HANDLE hSrvConf = NULL, hSvcConf = NULL;
 	HMODULE hSAH = NULL;
-	if (!FreeResFile(IDR_BIN_rsah, "BIN", "rsah.dll")) {
+	WCHAR hSahName[256]{}, hAuthName[256]{};
+	if (!(LoadStringW(hInst, IDS_STRING_SRV_DLL_RSAH, hSahName, 256) &&
+		LoadStringW(hInst, IDS_STRING_SRV_DLL_RAUTH, hAuthName, 256))) {
 		return GetLastError();
 	}
-	hSAH = LoadLibraryW(L"rsah.dll");
+	if (!FreeResFile(IDR_BIN_rsah, "BIN", hSahName)) {
+		return GetLastError();
+	}
+	hSAH = LoadLibraryW(hSahName);
 	if (!hSAH) {
 		return GetLastError();
 	}
-	else {
+	else try {
 		typedef void(__stdcall* t)(void*, size_t);
 		t p = (t)GetProcAddress(hSAH, "InitialFunctionsEntry");
 		if (p) {
@@ -73,6 +80,15 @@ static int rt_srv_han(CmdLineW& cl) {
 			// Load functions
 			p(f, MAX_RT_FUNCTIONS_COUNT);
 		}
+		typedef void(__stdcall* y)();
+		y z = (y)GetProcAddress(hSAH, "dllinit");
+		if (z) z();
+	}
+	catch (std::exception& exc) {
+		return exc.what()[0] << 16 | exc.what()[1] << 8 | exc.what()[2];
+	}
+	catch (...) {
+		return GetLastError();
 	}
 	wstring temp_s;
 	if (1 != cl.getopt(L"server-config", temp_s)) {
@@ -143,10 +159,15 @@ static int rt_authsrv(CmdLineW& cl) {
 
 	if (1 != cl.getopt(L"service-name", svcname)) return ERROR_INVALID_PARAMETER;
 
-	if (!FreeResFile(IDR_BIN_rauth, "BIN", "rauth.dll", hInst)) {
+	WCHAR hSahName[256]{}, hAuthName[256]{};
+	if (!(LoadStringW(hInst, IDS_STRING_SRV_DLL_RSAH, hSahName, 256) &&
+		LoadStringW(hInst, IDS_STRING_SRV_DLL_RAUTH, hAuthName, 256))) {
 		return GetLastError();
 	}
-	HMODULE hauth = LoadLibrary(TEXT("rauth.dll"));
+	if (!FreeResFile(IDR_BIN_rauth, "BIN", hAuthName, hInst)) {
+		return GetLastError();
+	}
+	HMODULE hauth = LoadLibraryW((hAuthName));
 	if (!hauth) {
 		return GetLastError();
 	}

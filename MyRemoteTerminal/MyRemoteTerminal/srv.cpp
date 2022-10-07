@@ -8,6 +8,7 @@
 static rt_srv_config* rt_config;
 static std::map<std::string, std::string> http_file_mapping;
 static std::map<std::string, std::string> http_file_mapping_authreq;
+static WCHAR hSahName[256]{}, hAuthName[256]{};
 static void rt_srv_load_file_mapping();
 static bool rt_srv_validate_config(rt_srv_config* config);
 static void rt_srv_handler(struct mg_connection*, int, void*, void*);
@@ -19,6 +20,7 @@ static void rt_srv_apihandler(struct mg_connection*, int, void*, void*);
 #define MY_RT_SRV_DEBUG_INFO(x)
 #endif
 
+extern HINSTANCE hInst;
 DWORD __stdcall rt_srv_main(PVOID config) {
 	using namespace std;
 	if (!config) return ERROR_INVALID_PARAMETER;
@@ -26,6 +28,11 @@ DWORD __stdcall rt_srv_main(PVOID config) {
 	::rt_config = conf;
 
 	if (!rt_srv_validate_config(conf)) return ERROR_INVALID_DATA;
+
+	if (!(LoadStringW(hInst, IDS_STRING_SRV_DLL_RSAH, hSahName, 256) &&
+		LoadStringW(hInst, IDS_STRING_SRV_DLL_RAUTH, hAuthName, 256))) {
+		return GetLastError();
+	}
 
 	rt_srv_load_file_mapping();
 
@@ -83,17 +90,17 @@ void rt_srv_handler(mg_connection* c, int ev, void* ev_data, void* fn_data) {
 		struct mg_http_message* hm = (struct mg_http_message*)ev_data;
 		struct mg_http_serve_opts opts = {};
 
-		if (rt_config->serviceStatus != SERVICE_RUNNING) {
-			if (mg_http_match_uri(hm, "/api/server/run")) {
-				// Attempt to fetch parameters from the body, hm->body
-				struct mg_str params = hm->body;
+		if (mg_http_match_uri(hm, "/api/server/run")) {
+			// Attempt to fetch parameters from the body, hm->body
+			struct mg_str params = hm->body;
 
-				mg_http_reply(c, 403, NULL, "");
-			}
-			else {
-				my_http_serve_file(c, hm, "html/error/srv_not_running.html",
-					&opts, 503, "Service Unavailable");
-			}
+			mg_http_reply(c, (rt_config->serviceStatus == SERVICE_RUNNING)
+				? 200 : 403, NULL, "");
+			return;
+		}
+		if (rt_config->serviceStatus != SERVICE_RUNNING) {
+			my_http_serve_file(c, hm, "html/error/srv_not_running.html",
+				&opts, 503, "Service Unavailable");
 			return;
 		}
 
@@ -124,13 +131,17 @@ void rt_srv_handler(mg_connection* c, int ev, void* ev_data, void* fn_data) {
 			}
 		}
 
+		if (mg_http_match_uri(hm, "/favicon.ico")) {
+			mg_http_reply(c, 302, "Location: /api/favicon.ico\r\n", "");
+		}
+
 		my_http_serve_file(c, hm, "html/error/not_found.html",
 			&opts, 404, 0);
 	}
 }
 
 void rt_srv_apihandler(mg_connection* c, int ev, void* ev_data, void* fn_data) {
-	HMODULE m = GetModuleHandle(TEXT("rsah.dll"));
+	HMODULE m = GetModuleHandleW(hSahName);
 	if (m) {
 		typedef void(__stdcall* t)(mg_connection*, int, void*, void*);
 		t f = (t)GetProcAddress(m, "rt_srv_api_handler");

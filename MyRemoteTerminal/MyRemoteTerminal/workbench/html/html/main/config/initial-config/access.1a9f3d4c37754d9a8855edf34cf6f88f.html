@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access token</title>
+    <script src="/static/lib/jsencrypt.min.js"></script>
+</head>
+<body>
+
+    <h1>Access token</h1>
+
+    <p>
+        To continue, an access token is required.<br>
+        You can get it by running the setup program, just fill in this service's name and click [Activate].
+    </p>
+
+    <form onsubmit="return false" id="f" style="border: 1px solid #ccc;padding:10px;display:inline-flex;flex-direction:column;">
+
+        <label>
+            <div>Please fill in your access token.</div>
+            <div><input type="text" id="k" placeholder="Fill in or paste your access token here." style="width:100%;box-sizing:border-box"></div>
+            <p id="r" style="margin: 3px 0;color: red"></p>
+        </label>
+
+        <button type="submit">Continue</button>
+
+    </form>
+
+    <script>
+        (parent.document.querySelector('#myForm .btn.control button[data-role=next]') || {}).disabled = true;
+        
+        k.onpaste = function (ev) {
+            if (!ev) return;
+            if (!(ev.clipboardData &&
+             ev.clipboardData.items &&
+             ev.clipboardData.items[0] &&
+             ev.clipboardData.items[0].kind == 'string' &&
+             ev.clipboardData.items[0].getAsString)) {
+                return;
+            }
+            
+            ev.clipboardData.items[0].getAsString(function (str) {
+                let strArg = str.split('\n');
+                if (strArg.length < 7 ||
+                  !strArg[1].startsWith('Activator') ||
+                  !strArg[5].startsWith('Your access token is:')) 
+                    return;
+                ev.target.value = strArg[6];
+            })
+        };
+
+        f.onsubmit = function (ev) {
+            ev.preventDefault();
+
+            let inp = f.querySelector('input');
+            inp.type = 'password';
+            f.querySelectorAll('button,input').forEach(el => {
+                el.disabled = true;
+            });
+            r.innerHTML = '';
+
+            fetch('/api/secure/server.pub')
+            .then(v=>{return v.text()})
+            .then(function(v){
+                var enc = new JSEncrypt();
+                enc.setPublicKey(v);
+                inp.value = (function () {
+                    let _ = enc.encrypt(inp.value);
+                    if (!_) throw new Error('Failed to encrypt data');
+                    return _;
+                })();
+                return execute();
+            })
+            .catch(v => {
+                f.querySelector('input').value = '';
+                f.querySelector('input').type = 'text';
+                f.querySelectorAll('button,input').forEach(el => {
+                    el.disabled = false;
+                });
+                r.innerText = `[Error] ${v}. Please retry.`;
+            });
+
+            function execute() {
+                fetch('/api/config/create_session_by_token', {
+                    method: 'post',
+                    body: k.value
+                })
+                .then(r => {
+                    if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+                    return r.text();
+                })
+                .then(t => {
+                    sessionStorage.setItem('initial_config-sessionid', t);
+                    r.innerHTML = '<span style="color:blue">Click Next to continue.</span>';
+                    (parent.document.querySelector('#myForm .btn.control button[data-role=next]')||{}).disabled = false;
+                })
+                .catch(v => {
+                    f.querySelector('input').value = '';
+                    f.querySelector('input').type = 'text';
+                    f.querySelectorAll('button,input').forEach(el => {
+                        el.disabled = false;
+                    });
+                    r.innerText = `[Error] ${v}. Please retry.`;
+                });
+            }
+        };
+    </script>
+    
+</body>
+</html>
