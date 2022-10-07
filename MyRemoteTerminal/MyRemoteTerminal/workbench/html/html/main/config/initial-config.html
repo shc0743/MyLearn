@@ -7,8 +7,163 @@
     <title>Initial Config</title>
     <link rel="stylesheet" href="/static/global.css" />
     <link rel="stylesheet" href="/static/cbox.css" />
+    <link rel="stylesheet" href="/static/w32ctl.css" />
+    <script src="/static/ModalElement.js"></script>
+    <script src="/static/lib/getUrlValue.js"></script>
 </head>
 <body>
+
+    <div class="wrapper">
+        <main>
+            
+            <div id="myForm">
+                <div class="left">
+                    <div class="steps">
+                        <p class="item full active">Continue</p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="right">
+                    <div class="content main-content ajax">
+                        <my-text>Loading...</my-text>
+                    </div>
+
+                    <div class="btn control right-bottom">
+                        <section>
+                            <div><button class="w32" role="button" data-role="prev" disabled>&lt;&nbsp;Prev</button></div>
+                            <div><button class="w32" role="button" data-role="next" disabled>Next&nbsp;&gt;</button></div>
+                        </section>
+                        <section>&nbsp;</section>
+                        <section>
+                            <div><button class="w32" role="button" data-role="cancel" disabled>Cancel</button></div>
+                        </section>
+                        <img style="display:none" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAAtJREFUGFdjYAACAAAFAAGq1chRAAAAAElFTkSuQmCC"
+                            onload="this.parentElement.addEventListener('mousedown', function (ev) { ev.target.classList.add('pressed') }, true);
+                            function F(ev) { ev.target.classList.remove('pressed') }this.parentElement.addEventListener('mouseleave', F, true);
+                            this.parentElement.addEventListener('mouseup',F,true);" />
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="/api/secure/secure.js?config/initial-config"></script>
+
+    <style>
+        #myForm {
+            display: flex;
+
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #myForm > .left {
+            overflow: hidden;
+        }
+
+        #myForm > .left * ,
+        #myForm .btn.control * {
+            user-select: none;
+        }
+
+        @media screen and (min-width: 500px) {
+            #myForm {
+                flex-direction: row;
+            }
+            #myForm > hr {
+                border-left: 1px solid;
+                border-right: 0;
+                height: 100%;
+                position: relative;
+                top: -10px;
+            }
+            #myForm > .left {
+                width: 10em;
+            }
+        }
+        @media screen and (max-width: 499px) {
+            #myForm {
+                flex-direction: column;
+                overflow: hidden;
+            }
+            #myForm > hr {
+                border-top: 1px solid;
+                border-bottom: 0;
+                width: 100%;
+            }
+            #myForm .steps .item {
+                margin-bottom: 0;
+            }
+            #myForm .steps .item:not(.active):not(.current) {
+                display: none;
+            }
+        }
+
+        #myForm > .right {
+            flex: 1;
+            
+            display: flex;
+            flex-direction: column;
+        }
+        #myForm > .right > * {
+            width: 100%;
+        }
+        #myForm > .right > .content.main-content {
+            flex: 1;
+            overflow: auto;
+            /* padding: 10px; */
+            padding: 0;
+            width: revert;
+        }
+        #myForm > .right > .content.main-content > * {
+            margin: 10px;
+        }
+        #myForm > .right > .content.main-content iframe {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            box-sizing: border-box;
+            vertical-align: top;
+        }
+        #myForm > .right > .btn.control {
+            border-top: 1px solid;
+            overflow: hidden;
+            padding: 10px 0;
+
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+        }
+        #myForm > .right > .btn.control button {
+            margin-right: 10px;
+            font-size: large;
+        }
+        #myForm > .right > .btn.control > section > div {
+            display: inline-block;
+        }
+
+        #myForm .steps {
+            padding: 0 10px;
+        }
+        #myForm .steps .item {
+            color: gray;
+        }
+        #myForm .steps .item::before {
+            content: "  ";
+        }
+        #myForm .steps .item.full {
+            color: black;
+        }
+        #myForm .steps .item.active::before {
+            content: "> ";
+        }
+    </style>
     
 </body>
 </html>

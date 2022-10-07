@@ -1,0 +1,98 @@
+{
+    "code": 0,
+    "data": {
+        "CLSID": {
+            "d7597401-530f-4f5a-b433-15e23e902c3a": {
+                "comment": ["this project"]
+            },
+            "f34af7f6-bbea-4139-9712-6cd8d3b70914": {
+                "comment": ["third-party library"]
+            },
+            "41e76bfe-3f72-4936-b231-d7ac41afe7d5": {
+                "comment": { "test": true }
+            }
+
+        },
+        "items": [
+            {
+                "id": "dce5be09-4e73-4e0c-89c2-01957d7e9587",
+                "Classes": [
+                    "d7597401-530f-4f5a-b433-15e23e902c3a"
+                ],
+                "text": "My Remote Terminal",
+                "rows": [
+                    {
+                        "name": "License",
+                        "value": "GNU General Public License v3.0"
+                    },
+                    {
+                        "name": "License",
+                        "value": "<a href=\"https://gnu.org/licenses/gpl-3.0-standalone.html\">GPL-3.0</a>"
+                    },
+                    {
+                        "name": "License Text",
+                        "value": "<a href=\"/api/static/licenses/show?lib=this\">[Show]</a>"
+                    },
+                    {
+                        "name": "Author",
+                        "value": "<a href=\"https://github.com/shc0743\">shc0743</a>"
+                    },
+                    {
+                        "name": "Website",
+                        "value": "<a href=\"https://github.com/shc0743/MyLearn/tree/main/MyRemoteTerminal\">Fork me on GitHub</a>"
+                    }
+                ]
+            },
+            {
+                "id": "openssl",
+                "Classes": [
+                    "f34af7f6-bbea-4139-9712-6cd8d3b70914"
+                ],
+                "text": "OpenSSL",
+                "rows": [
+                    {
+                        "name": "License",
+                        "value": "Apache License Version 2.0"
+                    },
+                    {
+                        "name": "License",
+                        "value": "<a href=\"https://www.apache.org/licenses/LICENSE-2.0\">Apache License 2.0</a>"
+                    },
+                    {
+                        "name": "License Text",
+                        "value": "<a href=\"/api/static/licenses/show?lib=openssl\">[Show]</a>"
+                    },
+                    {
+                        "name": "Website",
+                        "value": "<a href=\"https://www.openssl.org/\">OpenSSL.org</a>"
+                    }
+                ]
+            },
+            {
+                "id": "mongoose_ws",
+                "Classes": [
+                    "f34af7f6-bbea-4139-9712-6cd8d3b70914"
+                ],
+                "text": "mongoose",
+                "rows": [
+                    {
+                        "name": "License",
+                        "value": "GNU General Public License version 2 (dual-licensed: GPLv2 is selected)"
+                    },
+                    {
+                        "name": "License",
+                        "value": "<a href=\"https://gnu.org/licenses/gpl-2.0-standalone.html\">GPL-2.0</a>"
+                    },
+                    {
+                        "name": "License Text",
+                        "value": "<a href=\"/api/static/licenses/show?lib=mongoose\">[Show]</a>"
+                    },
+                    {
+                        "name": "Website",
+                        "value": "<a href=\"https://mongoose.ws/\">https://mongoose.ws</a>"
+                    }
+                ]
+            }
+        ]
+    }
+}

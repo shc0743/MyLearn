@@ -289,7 +289,7 @@ static LRESULT CALLBACK WndProc_SetupWnd(HWND hwnd, UINT msg, WPARAM wParam, LPA
 
 			ShellExecuteW(NULL, (IsRunAsAdmin() ? L"open" : L"runas"),
 				s2wc(GetProgramDir()), (L"--type=service-activator --name=\""s
-					+ buffer + L"\"").c_str(), NULL, SW_NORMAL);
+					+ buffer + L"\" --interactive").c_str(), NULL, SW_NORMAL);
 		}
 			break;
 

@@ -17,14 +17,29 @@
         <div class="ns">
             <p>Please check <a href="/api/auth/passwordrecovery/faq">THIS LINK</a> to recovery your password.</p>
         </div>
-        <div hidden class="s cbox border blue center">
-            <h1>Password Recovery Form</h1>
-
-
-        </div>
     </main>
 
-    <script async src="faq-helpful-reporter"></script>
+    <div hidden class="s cbox border blue center" style="display: flex; flex-direction: column; max-width: 30em; padding-bottom: 12px;">
+        <h1>Password Recovery Form</h1>
+
+        <form id=r onsubmit="return false">
+            <div style="margin: 2px 0 10px 0">
+                <label>Username<input style="display:block;width:calc(100% - 1em)"></label>
+            </div>
+
+            <button type="submit" style="padding: 5px; display: block; width: 100%;">Continue</button>
+        </form>
+    </div>
+
+    <script>
+        r.addEventListener('submit', function (ev) {
+            ev.preventDefault();
+
+            ev.target.querySelectorAll('button').forEach(element => {
+                element.disabled = true;
+            });
+        })
+    </script>
 
 </body>
 

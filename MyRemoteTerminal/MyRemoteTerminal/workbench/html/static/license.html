@@ -15,22 +15,243 @@
             border: 0;
             z-index: 1;
         }
+        main {
+            display: none;
+        }
+        .main {
+            display: revert;
+        }
+
+        a:any-link, a[href] {
+            color: blue;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        *:disabled, *[disabled] {
+            color: gray;
+            cursor: not-allowed !important;
+        }
+
+        .main div.item {
+            margin-bottom: 10px;
+        }
+        .main div.item fieldset my-table {
+            /* display: flex; */
+            /* flex-direction: column; */
+            display: table;
+        }
+        .main div.item fieldset my-table * {
+            border: 0;
+            vertical-align: top;
+        }
+        .main div.item fieldset my-table my-tr {
+            /* display: flex; */
+            /* flex-direction: row; */
+            display: table-row;
+        }
+        .main div.item fieldset my-table my-tr my-td {
+            display: table-cell;
+        }
+        .main div.item fieldset my-table my-tr my-td:not(:nth-child(1)) {
+            flex: 1;
+        }
+        .main div.item fieldset my-table my-tr my-td:nth-child(1) {
+            margin-right: 20px;
+            font-weight: bold;
+            float: left;
+        }
     </style>
 </head>
 <body>
-    <main id="m">
-        The license of the project is GPL-3.0 . 
-        See full license text <a href="https://www.gnu.org/licenses/gpl-3.0-standalone.html">Here</a>
-        or <button>Click here</button> to open it in an iframe.
+
+    <main>
+        <a href="/static/license.html">License</a>
     </main>
+
+    <div id="main" class="main">
+
+        <h1 style="text-align: center">Licenses</h1>
+
+        <div class="items">
+            <div>Loading datas, please wait...</div>
+        </div>
+
+    </div>
+
+
     <script>
-        document.querySelector('button').onclick = function () {
-            this.disabled = true;
-            m.hidden = true;
-            let b = document.createElement('iframe');
-            b.src = 'gpl-3.0.html';
-            document.body.append(b);
-        }
+
+        fetch('/static/licenses/licenses.json')
+        // fetch('licenses/licenses.json')
+        .then(function (v) { return v.json() })
+        .then(function (data) {
+            let it = document.querySelector('#main .items');
+
+            if (data.code !== 0) throw data.code;
+            if (typeof (data.data) !== "object" || typeof (data.data.items) !== "object")
+                throw new TypeError("Invalid data found");
+
+            it.innerHTML = '';
+
+            for (let i of data.data.items) {
+                let el = document.createElement('div');
+                let fieldset = document.createElement('fieldset');
+                let legend = document.createElement('legend');
+                let div1 = document.createElement('div');
+
+                el.classList.add('item');
+                
+                el.append(fieldset);
+                fieldset.append(legend);
+                fieldset.append(div1);
+
+                let link1 = document.createElement('a');
+                let span1 = document.createElement('span');
+
+                if (i.html) link1.innerHTML = i.html;
+                else link1.innerText = i.text;
+
+                if (i.id) {
+                    el.id = i.id;
+                    link1.href = '#' + i.id;
+                }
+
+                legend.append(link1);
+                legend.append(span1);
+
+                if (i.Classes) 
+                for (let j of i.Classes) {
+                    try {
+                        let p = (data.data.CLSID[j]);
+                        if (!p) throw 0;
+
+                        for (let k in p) {
+                            if (Array.prototype.isPrototypeOf(p[k])) {
+                                let arr = p[k];
+                                if (!(i[k])) {
+                                    i[k] = [];
+                                }
+                                if (Array.prototype.isPrototypeOf(i[k])) {
+                                    i[k].push(p[k]);
+                                }
+                                else {
+                                    console.warn("Failed to merge CLSID data:\n",
+                                        'Key ["' + k + "\"], trying to merge", p[k], '->', i[k], "\n",
+                                        i, '["' + k + '"] is ', i[k]);
+                                }
+                            }
+                            else if (Object.prototype.isPrototypeOf(p[k])) {
+                                let obj = p[k];
+                                if (!(i[k])) {
+                                    i[k] = {};
+                                }
+                                if (Object.prototype.isPrototypeOf(i[k])) {
+                                    i[k] = (p[k]);
+                                }
+                                else {
+                                    console.warn("Failed to merge CLSID data:\n",
+                                        "Key", k, ", trying to merge", p[k], '->', i[k], "\n",
+                                        i, '[' + k + '] is ', i[k]);
+                                }
+                            }
+                            else {
+                                console.warn("Unable to merge CLSID data:\n",
+                                    "Trying to merge", p[k], '->', i[k], ", invalid data type");
+                            }
+                        }
+                    }
+                    catch (e) {}
+                }
+
+                let m1 = document.createElement('my-table');
+                div1.append(m1);
+
+                for (let j of i.rows) {
+                    let d0 = document.createElement('my-tr');
+                    let d1 = document.createElement('my-td');
+                    let d2 = document.createElement('my-td');
+                    d0.append(d1);
+                    d0.append(d2);
+
+                    d1.innerHTML = j.name;
+                    d2.innerHTML = j.value;
+
+                    m1.append(d0);
+                }
+
+                if (Array.prototype.isPrototypeOf(i.comment))
+                for (let j of i.comment) {
+                    span1.append(document.createTextNode(' (' + j + ')'));
+                }
+
+                // console.log("Add data ", i);
+
+                it.append(el);
+            }
+
+            let hash = location.hash;
+            if (hash.length > 1 && hash.startsWith('#')) {
+                let id = hash.substring(1);
+                let el = document.getElementById(id);
+                if (el) {
+                    el.scrollIntoView();
+                }
+            }
+
+            it.addEventListener('click', function (ev) {
+                if (ev.target.tagName.toLowerCase() != 'a') return;
+                ev.preventDefault();
+
+                let el = ev.target;
+                if (el.href.startsWith('#') ||
+                    el.href.startsWith(location.origin + location.pathname + '#'))
+                    return location.href = el.href;
+
+                if (el.__window_is_opening) {
+                    restore(el);
+                    return false;
+                }
+                
+                let win = window.open(el.href, '_blank');
+                if (!win) return false;
+                
+                el.__window_is_opening = win;
+                el.setAttribute('disabled', true);
+                el.style.color = 'gray';
+                el.__old_text = el.innerHTML;
+                el.innerHTML = `[Window is opened. Click to close]`;
+
+                function restore (el) {
+                    el.__window_is_opening.close();
+                    el.removeAttribute('disabled');
+                    el.style.color = '';
+                    el.innerHTML = el.__old_text;
+                    delete el.__old_text;
+                    delete el.__window_is_opening;
+                }
+
+            }, true);
+
+        })
+        .catch(function (error) {
+            document.querySelector('#main .items').innerHTML = `
+            <div>
+                <div style="color: red; font-size: 1.5rem"><b>Error</b></div>
+                <div>
+                    <div>Failed to load licenses information.</div>
+                    <div>Details:</div>
+                    <div data-deta tabindex=0 style="user-select:all" title="Copy">
+                        Unknown Error
+                    </div>
+                </div>
+            </div>
+            `;
+            document.querySelector('#main .items [data-deta]').innerText = String(error);
+            
+        })
     </script>
+
 </body>
 </html>

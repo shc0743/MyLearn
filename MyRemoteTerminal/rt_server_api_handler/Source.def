@@ -2,5 +2,6 @@ LIBRARY
 
 EXPORTS
 	InitialFunctionsEntry
+	dllinit
 	rt_srv_api_handler
 

@@ -1089,6 +1089,9 @@ int mg_http_status(const struct mg_http_message *hm);
     void my_http_serve_file(struct mg_connection*, struct mg_http_message* hm,
         const char* path, const struct mg_http_serve_opts*,
         int stat, const char* stat_text);
+    void my_http_serve_file_noEtag(struct mg_connection*, struct mg_http_message* hm,
+        const char* path, const struct mg_http_serve_opts*,
+        int stat, const char* stat_text);
     //bool my_http_matchhead_uri(const struct mg_http_message* hm, const char* glob);
 
 

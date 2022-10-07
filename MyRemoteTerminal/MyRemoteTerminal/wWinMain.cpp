@@ -18,6 +18,11 @@ HINSTANCE hInst;
 
 static int __stdcall srvInstall(CmdLineW& cl);
 static int __stdcall srvUnInstall(CmdLineW& cl);
+static int __stdcall svcActivate(CmdLineW& cl);
+static int __stdcall svcErrCtl(CmdLineW& cl);
+static int __stdcall execupdate(CmdLineW& cl);
+static int __stdcall mytesting(CmdLineW& cl);
+
 
 static int __stdcall _wWinMainCallTarget() {
 	CmdLineW cl(GetCommandLineW());
@@ -27,86 +32,23 @@ static int __stdcall _wWinMainCallTarget() {
 		cl.getopt(L"type", t);
 
 		if (t == L"ui") {
-			return mWinDispatchUIMain();
+			return mWinDispatchUIMain(cl);
 		}
 
 		if (t == L"error-control") {
-			// TODO: Run error control function
-			Sleep(5000);
-			return 0;
+			return svcErrCtl(cl);
 		}
 
 		if (t == L"update") {
-			wstring src, target;
-			cl.getopt(L"updateSource", src);
-			cl.getopt(L"targetService", target);
-			if (src.empty() || target.empty()) return ERROR_INVALID_PARAMETER;
-
-			if (ServiceManager.Stop(ws2s(target))) {
-				//return GetLastError() | 0x10000000;
-			}
-			Sleep(3000);
-
-			SC_HANDLE sch, sc;
-			sch = OpenSCManager(0, 0, SC_MANAGER_ALL_ACCESS);
-			if (!sch) return GetLastError();
-			sc = OpenServiceW(sch, target.c_str(), SERVICE_QUERY_CONFIG);
-			if (!sc) {
-				CloseServiceHandle(sch);
-				return GetLastError() | 0x10000000;
-			}
-			DWORD pcb = 0, cbBufSize = 0;
-			LPQUERY_SERVICE_CONFIGW pqsc = NULL;
-			CmdLineW scl;
-			if (!QueryServiceConfigW(sc, NULL, 0, &pcb)) {
-				DWORD dwError = GetLastError();
-				if (ERROR_INSUFFICIENT_BUFFER == dwError) {
-					cbBufSize = pcb;
-					pqsc = (LPQUERY_SERVICE_CONFIGW)calloc(1, cbBufSize);
-					if (!pqsc) {
-						CloseServiceHandle(sc);
-						CloseServiceHandle(sch);
-						return GetLastError() | 0x10000000;
-					}
-				}
-				else {
-					CloseServiceHandle(sc);
-					CloseServiceHandle(sch);
-					return ERROR_INTERNAL_ERROR;
-				}
-			}
-			if (!pqsc) {
-				CloseServiceHandle(sc);
-				CloseServiceHandle(sch);
-				return GetLastError() | 0x10000000;
-			}
-			if (!QueryServiceConfigW(sc, pqsc, cbBufSize, &pcb)) {
-				CloseServiceHandle(sc);
-				CloseServiceHandle(sch);
-				return GetLastError() | 0x10000000;
-			}
-			CloseServiceHandle(sc);
-			CloseServiceHandle(sch);
-			scl.parse(pqsc->lpBinaryPathName);
-			free(pqsc);
-			if (scl.argc() < 1) return ERROR_INVALID_DATA;
-
-			if (file_exists(scl[0]))
-			if (!DeleteFileW(scl[0].c_str())) return GetLastError();
-			if (!CopyFileW(src.c_str(), scl[0].c_str(), 1)) return GetLastError();
-
-			ServiceManager.Start(ws2s(target));
-
-			return 0;
+			return execupdate(cl);
 		}
 
 		if (t == L"test") {
+			return mytesting(cl);
+		}
 
-			if (cl.argc() >= 4 && cl[2] == L"sha256") {
-				cout << rt_sha256(ws2s(cl[3])) << endl;
-			}
-
-			return 0;
+		if (t == L"service-activator") {
+			return svcActivate(cl);
 		}
 
 
@@ -138,6 +80,7 @@ static int __stdcall _wWinMainCallTarget() {
 	return ERROR_INVALID_PARAMETER;
 	return 0;
 }
+
 
 int __stdcall srvInstall(CmdLineW& cl) {
 	wstring
@@ -189,7 +132,7 @@ int __stdcall srvInstall(CmdLineW& cl) {
 		vector<wstring> paths;
 		str_replace(instdir, L"/", L"\\");
 		str_split(instdir, L"\\", paths);
-		for (auto i : paths) {
+		for (wstring i : paths) {
 			i += L"\\";
 			if (!SetCurrentDirectoryW(i.c_str())) {
 				if (!(CreateDirectoryW(i.c_str(), NULL) &&
@@ -613,6 +556,229 @@ clean1:
 	return (int)code;
 
 #undef ECTLD
+}
+
+int __stdcall svcActivate(CmdLineW& cl) {
+	bool interactive = cl.getopt(L"interactive");
+	wstring name;
+	cl.getopt(L"name", name);
+	if (name.empty()) {
+		if (interactive) {
+			MessageBoxW(0, ErrorCodeToStringW(ERROR_INVALID_PARAMETER)
+				.c_str(), 0, MB_ICONERROR);
+		}
+		return ERROR_INVALID_PARAMETER;
+	}
+
+	WCHAR pp[256]{};
+	LoadStringW(NULL, IDS_STRING_SRV_AUTHSRV_NAME, pp, 256);
+	wstring pn = pp;
+	LoadStringW(NULL, IDS_STRING_APP_UUID, pp, 256);
+	str_replace(pn, L"%uuid%", pp);
+	str_replace(pn, L"%ServiceName%", name);
+	HANDLE hFile = CreateFileW(pn.c_str(), GENERIC_READ | GENERIC_WRITE,
+		0, 0, OPEN_EXISTING, 0, 0);
+	if (!hFile || hFile == INVALID_HANDLE_VALUE) {
+		if (interactive) {
+			MessageBoxW(0, LastErrorStrW().c_str(), 0, MB_ICONERROR);
+		}
+		return GetLastError();
+	}
+
+	DWORD p1 = 0;
+	size_t buf_size = (size_t)-3;
+	PSTR pBuffer = (NULL);
+	WriteFile(hFile, &buf_size, sizeof(buf_size), &p1, 0);
+
+	(void)(ReadFile(hFile, &buf_size, sizeof(buf_size), &p1, 0) + 1);
+	pBuffer = (PSTR)calloc(1, buf_size);
+	if (!pBuffer) {
+		if (interactive) {
+			MessageBoxW(0, LastErrorStrW().c_str(), 0, MB_ICONERROR);
+		}
+		return GetLastError();
+	}
+	(void)(ReadFile(hFile, pBuffer, (DWORD)buf_size, &p1, 0) + 1);
+
+	CloseHandle(hFile);
+
+	cout << pBuffer << endl;
+
+	if (interactive)
+	MessageBoxW(NULL, (
+		L"Service: " + name + L"\n\n"
+		"Your access token is:\n"
+		+ s2ws(pBuffer) + L"\n"
+		"Press [Ctrl+C] to copy.\n\n"
+		"Please open config page to continue."
+		).c_str(), L"Activator", MB_ICONINFORMATION);
+
+	free(pBuffer);
+
+	return 0;
+}
+
+int __stdcall svcErrCtl(CmdLineW& cl) {
+	// TODO: Run error control function
+	Sleep(5000);
+	return 0;
+}
+
+int __stdcall execupdate(CmdLineW& cl) {
+	wstring src, target;
+	cl.getopt(L"updateSource", src);
+	cl.getopt(L"targetService", target);
+	if (src.empty() || target.empty()) return ERROR_INVALID_PARAMETER;
+
+	if (ServiceManager.Stop(ws2s(target))) {
+		//return GetLastError() | 0x10000000;
+	}
+	Sleep(3000);
+
+	SC_HANDLE sch, sc;
+	sch = OpenSCManager(0, 0, SC_MANAGER_ALL_ACCESS);
+	if (!sch) return GetLastError();
+	sc = OpenServiceW(sch, target.c_str(), SERVICE_QUERY_CONFIG);
+	if (!sc) {
+		CloseServiceHandle(sch);
+		return GetLastError() | 0x10000000;
+	}
+	DWORD pcb = 0, cbBufSize = 0;
+	LPQUERY_SERVICE_CONFIGW pqsc = NULL;
+	CmdLineW scl;
+	if (!QueryServiceConfigW(sc, NULL, 0, &pcb)) {
+		DWORD dwError = GetLastError();
+		if (ERROR_INSUFFICIENT_BUFFER == dwError) {
+			cbBufSize = pcb;
+			pqsc = (LPQUERY_SERVICE_CONFIGW)calloc(1, cbBufSize);
+			if (!pqsc) {
+				CloseServiceHandle(sc);
+				CloseServiceHandle(sch);
+				return GetLastError() | 0x10000000;
+			}
+		}
+		else {
+			CloseServiceHandle(sc);
+			CloseServiceHandle(sch);
+			return ERROR_INTERNAL_ERROR;
+		}
+	}
+	if (!pqsc) {
+		CloseServiceHandle(sc);
+		CloseServiceHandle(sch);
+		return GetLastError() | 0x10000000;
+	}
+	if (!QueryServiceConfigW(sc, pqsc, cbBufSize, &pcb)) {
+		CloseServiceHandle(sc);
+		CloseServiceHandle(sch);
+		return GetLastError() | 0x10000000;
+	}
+	CloseServiceHandle(sc);
+	CloseServiceHandle(sch);
+	scl.parse(pqsc->lpBinaryPathName);
+	free(pqsc);
+	if (scl.argc() < 1) return ERROR_INVALID_DATA;
+
+	if (file_exists(scl[0]))
+		if (!DeleteFileW(scl[0].c_str())) return GetLastError();
+	if (!CopyFileW(src.c_str(), scl[0].c_str(), 1)) return GetLastError();
+
+	ServiceManager.Start(ws2s(target));
+
+	return 0;
+}
+
+int __stdcall mytesting(CmdLineW& cl) {
+
+	if (cl.argc() >= 4 && cl[2] == L"sha256") {
+		cout << rt_sha256(ws2s(cl[3])) << endl;
+	}
+
+	if (cl.argc() > 2 && cl[2] == L"rsa_keygen") {
+		return !rt_generate_rsakey(stdout, stdout, 4096);
+	}
+
+	if (cl.argc() > 5 && cl[2] == L"rsa_crypt") {
+		wstring
+			key_file = (cl[3]),
+			in_file = (cl[4]),
+			out_file = (cl[5]);
+
+		constexpr auto bs = 4098;
+		using mystr = CHAR[bs];
+		mystr key{}, in{}, out{};
+
+		//using pF = FILE*;
+		//pF f1 = 0, f2 = 0, f3 = 0;
+		//fstream f1, f2, f3;
+		HANDLE f1, f2, f3;
+		DWORD dw = 0;
+
+		//fopen_s(&f1, key_file.c_str(), "rt");
+		//fopen_s(&f2, in_file.c_str(), "rt");
+		//fopen_s(&f3, out_file.c_str(), "wt+");
+		//f1.open(key_file, ios::in|ios::binary);
+		//f2.open(in_file, ios::in|ios::binary);
+		//f3.open(out_file, ios::out|ios::binary);
+		f1 = CreateFileW(key_file.c_str(), GENERIC_READ, FILE_SHARE_READ,
+			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		f2 = CreateFileW(in_file.c_str(), GENERIC_READ, FILE_SHARE_READ,
+			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		f3 = CreateFileW(out_file.c_str(), GENERIC_WRITE, 0,
+			NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		if (!f1 || !f2 || !f3) {
+			cerr << "Failed to open file\n";
+			cout << "Failed to open file" << endl;
+
+			if (f1) CloseHandle(f1);
+			if (f2) CloseHandle(f2);
+			if (f3) CloseHandle(f3);
+			return 1;
+		}
+
+		//fread(key, bs, 1, f1);
+		//auto in_size = fread(in, bs, 1, f2);
+		//f1.read(key, bs);
+		//f2.read(in, bs);
+		//int in_size = (int)f2.tellg();
+		//if (in_size == -1) {
+		//	f2.seekg(0, f2.end);
+		//	in_size = (int)f2.tellg();
+		//}
+		(void)ReadFile(f1, key, bs, &dw, 0);
+		auto key_size = dw;
+		(void)ReadFile(f2, in, bs, &dw, 0);
+		auto in_size = dw;
+
+
+		int real_length = 0;
+		bool result = rt_rsa_decrypt_by_privkey(key,
+			(unsigned char*)in, in_size,
+			(unsigned char*)out, bs, &real_length);
+		//if (rand() > RAND_MAX) rt_rsa_decrypt_by_privkey(0, 0, 0, 0, 0, 0);
+
+		cout << "Result: " << (result?"true":"false") << endl <<
+			"Key size: " << key_size << endl <<
+			"Input size: " << in_size << endl <<
+			"Output size: " << real_length << endl;
+		
+
+		if (result && real_length >= 0) {
+			//fwrite(out, real_length, 1, f3);
+			//f3.write(out, real_length);
+			WriteFile(f3, out, real_length, &dw, 0);
+			cout << "Data is outputed" << endl;
+		}
+
+		if (f1) CloseHandle(f1);
+		if (f2) CloseHandle(f2);
+		if (f3) CloseHandle(f3);
+
+		return 0;
+	}
+
+	return 0;
 }
 
 

@@ -1,0 +1,36 @@
+/*
+A CSS simulating Win32 commctl.dll window controls
+*/
+
+/* Golbal style */
+.w32 {
+    border-radius: 0;
+    transition: 0.1s;
+}
+
+/* Win32 class [Button] */
+button.w32 {
+    color: #000000;
+    background: #e1e1e1;
+    border: 1px solid #adadad;
+    padding: 5px 10px;
+}
+button.w32:focus,
+button.w32.active {
+    -z-comment: 'Developing content';
+}
+button.w32:hover {
+    background: #E5F1FB;
+    border: 1px solid #0078D7;
+}
+button.w32.pressed {
+    background: #CCE4F7;
+    border: 1px solid #005499;
+}
+button.w32:disabled, button.w32[disabled] {
+    color: #838383;
+    background: #CCCCCC;
+    border: 1px solid #BFBFBF;
+}
+
+

@@ -5,6 +5,7 @@
 #include "workbench/workbench.h"
 #include "workbench/PlatformResource/PlatformResource.h"
 #include "rt_user_auth.h"
+#include "mycryp.h"
 
 static SERVICE_STATUS          gSvcStatus; 
 static SERVICE_STATUS_HANDLE   gSvcStatusHandle;
@@ -28,6 +29,7 @@ static void __stdcall SvcInit( DWORD, LPTSTR * );
 
 static DWORD WINAPI rt_srv_subprocess_server_loader(PVOID);
 static DWORD WINAPI rt_srv_subprocess_authsrv_loader(PVOID);
+static DWORD WINAPI rt_srv_rsakey_generator(PVOID);
 
 static DWORD WINAPI SvcHandle_Stop(PVOID);
 static DWORD WINAPI SvcHandle_Pause(PVOID);
@@ -251,6 +253,13 @@ static DWORD __stdcall SvcHandle_Start(PVOID) {
 	gSvcStatus.dwCheckPoint++;
 	UpdateSvcStatus();
 
+	if (!file_exists(L".\\log")) {
+		CreateDirectoryW(L".\\log", NULL);
+	}
+	gSvcStatus.dwCheckPoint++;
+	UpdateSvcStatus();
+
+#if 0
 	//gSrvThread = CreateThread(0, 0, rt_srv_main, &gSrvConfig, 0, 0);
 	//if (!gSrvThread) {
 	//	if (gSvcUserFile) {
@@ -263,17 +272,15 @@ static DWORD __stdcall SvcHandle_Start(PVOID) {
 	//	}
 	//	return report_last_error();
 	//}
+#endif
 	if (HANDLE h = CreateThread(0, 0, rt_srv_subprocess_authsrv_loader, 0, 0, 0))
 		CloseHandle(h);
 	if (HANDLE h = CreateThread(0, 0, rt_srv_subprocess_server_loader, 0, 0, 0))
 		CloseHandle(h);
+	if (HANDLE h = CreateThread(0, 0, rt_srv_rsakey_generator, 0, 0, 0))
+		CloseHandle(h);
 	gSvcStatus.dwCheckPoint++;
 	UpdateSvcStatus();
-
-	//if (HANDLE h = CreateThread(0, 0, SvcWaiter_srvthread, 0, 0, 0))
-	//	CloseHandle(h);
-	//gSvcStatus.dwCheckPoint++;
-	//UpdateSvcStatus();
 
 
 	gSvcStatus.dwCurrentState = SERVICE_RUNNING;
@@ -435,6 +442,11 @@ DWORD WINAPI SvcHandle_Stop(PVOID) {
 	gSvcStatus.dwCheckPoint++;
 	UpdateSvcStatus();
 
+	DeleteFileW(L"svc_pub.tmp");
+	DeleteFileW(L"svc_priv.tmp");
+	gSvcStatus.dwCheckPoint++;
+	UpdateSvcStatus();
+
 	if (gSvcUserFile) {
 		SetHandleInformation(gSvcUserFile, HANDLE_FLAG_PROTECT_FROM_CLOSE, 0);
 		CloseHandle(gSvcUserFile);
@@ -503,8 +515,11 @@ static int __stdcall rt_subprocess_loader_worker(
 	wcscpy_s(cl, str.length() + 1, str.c_str());
 
 	size_t retryCount = 0;
+	size_t failureCount = 0;
 	time_t retryTime = 0;
+	time_t lastTime = 0;
 	constexpr size_t maxRetryCountIn1s = 5; // Retry 5 times in 1s
+	constexpr size_t maxFailureCount = 20; // Max fatal error allowed
 	while ((gSvcStatus.dwCurrentState != SERVICE_STOPPED) &&
 		(gSvcStatus.dwCurrentState != SERVICE_STOP_PENDING)) {
 		if (!CreateProcessW(GetProgramDirW().c_str(), cl, NULL, NULL, TRUE,
@@ -515,17 +530,35 @@ static int __stdcall rt_subprocess_loader_worker(
 				retryTime = time(0);
 			}
 			if (retryCount++ < maxRetryCountIn1s) continue; // retry
+			if (++failureCount > maxFailureCount) {
+				DWORD err = code;
+				if (err == 0) err = -1;
+				return err;
+			}
 
 			DWORD err = GetLastError();
 			if (err == 0) err = -1;
 			return err;
 		}
 		CloseHandle(pi.hThread);
+		lastTime = time(0);
 
 		*p = pi.hProcess;
 		Process.resume(pi.hProcess);
 		WaitForSingleObject(pi.hProcess, INFINITE);
 		GetExitCodeProcess(pi.hProcess, &code);
+
+		if (time(0) - lastTime <= 2) retryCount++;
+		if (retryCount > maxRetryCountIn1s) {
+			if (++failureCount > maxFailureCount) {
+				DWORD err = code;
+				if (err == 0) err = -1;
+				return err;
+			}
+			Sleep(3000);
+			retryCount = 0;
+			continue;
+		}
 
 	}
 
@@ -550,10 +583,11 @@ DWORD __stdcall rt_srv_subprocess_server_loader(PVOID _in) {
 #endif
 
 	wstring sc = L"ServiceSubProcess --service-sub-process --type=server ";
-	sc += L"--stdin=" + to_wstring((LONG_PTR)gSrvProcess_pipe_in) + L" "
-		L"--stdout=" + to_wstring((LONG_PTR)gSrvProcess_pipe_out) + L" "
+	sc += /*L"--stdin=" + to_wstring((LONG_PTR)gSrvProcess_pipe_in) + L" "
+		L"--stdout=" + to_wstring((LONG_PTR)gSrvProcess_pipe_out) + L" "*/
 		L"--server-config=" + to_wstring((LONG_PTR)gSrvCfgMapHandle) + L" "
-		L"--service-config=" + to_wstring((LONG_PTR)gSvcConfigHandle) + L" ";
+		L"--service-config=" + to_wstring((LONG_PTR)gSvcConfigHandle) + L" "
+		L"--service-name=\"" + gSvcName + L"\" ";
 
 	return rt_subprocess_loader_worker(sc,
 		gSrvProcess_pipe_in, gSrvProcess_pipe_out, &gSrvProcess);
@@ -570,6 +604,48 @@ DWORD __stdcall rt_srv_subprocess_authsrv_loader(PVOID) {
 		L"--service-name=\"" + gSvcName + L"\" ";
 
 	return rt_subprocess_loader_worker(sc, 0, 0, &gSrvAuthProcess);
+
+	return 0;
+}
+
+DWORD __stdcall rt_srv_rsakey_generator(PVOID) {
+	constexpr DWORD RT_SVC_RSA_KEY_REGENERATE_TIME = 10 * 60 * 1000;
+
+	size_t failure_count = 0;
+	constexpr size_t max_failure_count = 50;
+
+	while (1) {
+		FILE* fp1 = NULL, * fp2 = NULL;
+		fopen_s(&fp1, "svc_pub.tmp", "wb");
+		fopen_s(&fp2, "svc_priv.tmp", "wb");
+		if (!(fp1 && fp2)) {
+			if (fp1) fclose(fp1);
+			if (fp2) fclose(fp2);
+
+			if (++failure_count > max_failure_count) {
+				return GetLastError();
+			}
+			else {
+				Sleep(2000);
+				continue;
+			}
+		}
+
+		bool result = rt_generate_rsakey(fp1, fp2, 4096);
+		fclose(fp1);
+		fclose(fp2);
+		if (!result) {
+			if (++failure_count > max_failure_count) {
+				return GetLastError();
+			}
+			else {
+				Sleep(2000);
+				continue;
+			}
+		}
+
+		Sleep(RT_SVC_RSA_KEY_REGENERATE_TIME);
+	}
 
 	return 0;
 }

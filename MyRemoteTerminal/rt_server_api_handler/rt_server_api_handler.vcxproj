@@ -179,6 +179,7 @@
     <ClInclude Include="rt_server_api_handler.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\resource\tool.cpp" />
     <ClCompile Include="..\lib\mongoose\mongoose.c" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="pch.cpp">

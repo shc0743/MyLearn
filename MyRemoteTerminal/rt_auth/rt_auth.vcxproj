@@ -74,6 +74,8 @@
     <OutDir>..\lib\dllcache\</OutDir>
     <TargetName>$(ProjectName)_x64</TargetName>
     <IntDir>..\out\$(ProjectName).$(Platform)_$(Configuration)\</IntDir>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\lib\openssl\bin\VC-WIN64A\include;</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\lib\openssl\bin\VC-WIN64A\lib;</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>..\lib\dllcache\</OutDir>
@@ -157,11 +159,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\MyRemoteTerminal\mycryp.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\resource\tool.cpp" />
+    <ClCompile Include="..\MyRemoteTerminal\mycryp.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
