@@ -7,6 +7,7 @@
 #define IDS_STRING_UI_CLASS_CONFIG      1402
 #define IDS_STRING_UI_CLASS_EXECTIP     1403
 #define IDS_STRING_UI_CLASS_IDLENOTIFY  1310
+#define IDS_STRING_UI_CLASS_LIDLENTF    1311
 
 // Next default values for new objects
 // 

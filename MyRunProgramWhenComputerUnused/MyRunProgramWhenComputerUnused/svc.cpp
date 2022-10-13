@@ -145,7 +145,14 @@ VOID WINAPI SvcCtrlHandler(DWORD dwCtrl)
 	switch (dwCtrl)
 	{
 	case SERVICE_CONTROL_SHUTDOWN: {
-#if 1
+		/* 
+		[Fatal bug]:
+		Exit the service directly will cause childs always restart
+		and the computer couldn't shutdown.
+		[Solution]:
+		Just exit the service normally.
+		*/
+#if 0
 		gSvcStatus.dwCurrentState = SERVICE_STOPPED;
 		gSvcStatus.dwWin32ExitCode = 0;
 		gSvcStatus.dwCheckPoint = 0;
@@ -213,7 +220,7 @@ DWORD WINAPI SvcHandle_Stop(PVOID) {
 	UpdateSvcStatus();
 
 
-	Sleep(1024);
+	//Sleep(1024);
 	gSvcStatus.dwCurrentState = SERVICE_STOPPED;
 	gSvcStatus.dwWin32ExitCode = 0;
 	gSvcStatus.dwCheckPoint = 0;

@@ -98,7 +98,9 @@ END
 STRINGTABLE
 BEGIN
     IDS_STRING_UI_CLASS_IDLENOTIFY 
-                            "Window.class.MyRunProgramWhenComputerUnused@b0064cd6c52f4d9ea14136ffefddabc2.window.idlenotify"
+                            "Window.class.MyRunProgramWhenComputerUnused@b0064cd6c52f4d9ea14136ffefddabc2.window.idlenotify.idlenotify"
+     IDS_STRING_UI_CLASS_LIDLENTF
+                            "Window.class.MyRunProgramWhenComputerUnused@b0064cd6c52f4d9ea14136ffefddabc2.window.idlenotify.leaveidle"
 END
 
 STRINGTABLE
