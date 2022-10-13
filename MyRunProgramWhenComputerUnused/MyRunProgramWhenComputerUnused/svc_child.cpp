@@ -256,7 +256,20 @@ static DWORD __thread_idle_notifier(wstring cmd, HANDLE thExitEvent, size_t type
 		if (type == 0 || type == 2 || type == 1) {
 			while (WAIT_TIMEOUT == WaitForSingleObject(pi.hProcess, 2000)) {
 				if (active_session != WTSGetActiveConsoleSessionId()) {
-					// switched session, terminate it
+					// switched session,
+					if (type == 2) {
+						// someone is using the computer,
+						// so the function should return
+						SetEvent(thExitEvent);
+						if (WAIT_TIMEOUT == WaitForSingleObject(pi.hProcess, 5000)) {
+							TerminateProcess(pi.hProcess, ERROR_TIMEOUT);
+						}
+						ResetEvent(thExitEvent);
+						CloseHandle(pi.hProcess);
+						return 0;
+					}
+					//  terminate it
+					//
 					SetEvent(thExitEvent);
 					if (WAIT_TIMEOUT == WaitForSingleObject(pi.hProcess, 5000)) {
 						TerminateProcess(pi.hProcess, ERROR_TIMEOUT);
@@ -413,11 +426,13 @@ DWORD __stdcall MyServiceChildThread_IdleNotify(PVOID) {
 
 		// idle notifier
 		__thread_idle_notifier(cmd, hIdleNotifyEvent, 0);
-		if (_MyServiceChild_IdleExec(0) != 0xF0006690) {
+		// start idle_run
+		if (_MyServiceChild_IdleExec(0) != 0xF0006690 /* runned */) {
 			ResetEvent(hIdleNotifyEvent);
 			// wait for not idle
 			__thread_idle_notifier(cmd_eic, hIdleNotifyEvent, 2);
 		}
+		// start nidle_run
 		_MyServiceChild_IdleExec(1);
 
 	}
@@ -445,7 +460,7 @@ int __stdcall MyServiceChild(CmdLineW& cl) {
 
 struct idle_info {
 	HWND hwnd;
-	time_t idle_time_min; // 至少idle_time_min秒后给hwnd发消息
+	time_t idle_time_min; // 至少idle_time_min秒后////给hwnd发消息
 } _idlechk_info;
 
 static HHOOK hIdleCheckHook;
@@ -454,7 +469,7 @@ static LRESULT CALLBACK _IdleCheck_KbHookProc(int, WPARAM, LPARAM);
 
 static DWORD __stdcall _IdleCheck_Cursor(PVOID) {
 	const idle_info& info = _idlechk_info;
-	HWND hwnd = info.hwnd;
+	//HWND hwnd = info.hwnd;
 
 	POINT pt{}, pt_last{};
 	GetCursorPos(&pt_last);
@@ -500,6 +515,26 @@ static LRESULT CALLBACK _IdleCheck_KbHookProc(
 
 	return CallNextHookEx(hIdleCheckHook, nCode, wParam, lParam);
 }
+static DWORD __stdcall _IdleCheck_Thread_$02(PVOID) {
+	POINT pt{}, pt_last{};
+	GetCursorPos(&pt_last);
+	while (_idlechk_last_noidle_time == 0) {
+		GetCursorPos(&pt);
+		if (
+			(pt.x != pt_last.x || pt.y != pt_last.y) ||
+			(WaitForSingleObject(hExitEvent, 0) == WAIT_OBJECT_0)
+		) {
+			// Not idle
+			break;
+		}
+		Sleep(1000);
+		continue;
+	}
+	//SendMessage(_idlechk_info.hwnd, WM_USER + WM_QUIT, 0, 0);
+	if (hIdleCheckHook) UnhookWindowsHookEx(hIdleCheckHook);
+	ExitProcess(0);
+	return 0;
+}
 
 static LRESULT CALLBACK WndProc_IdleNotify(HWND hw, UINT msg, WPARAM wp, LPARAM lp) {
 	switch (msg)
@@ -540,6 +575,8 @@ int __stdcall MyServiceChild_IdleNotify(CmdLineW& cl) {
 
 	std::wstring cmd = GetCommandLineW();
 	cmd += L" --worker";
+	
+	bool isWaitForNotIdle = (cl.getopt(L"wait-for-not-idle"));
 
 	HANDLE h_l[2]{};
 	h_l[0] = hExitEvent;
@@ -591,17 +628,34 @@ int __stdcall MyServiceChild_IdleNotify(CmdLineW& cl) {
 						UOI_NAME, name2, sizeof(name2), &nLen);
 					if (dsk2) CloseDesktop(dsk2);
 					if (wcscmp(name1, name2) != 0) {
-						// switched desktop, terminate it
-						SetEvent(hExitEvent);
-						if (WAIT_TIMEOUT == WaitForSingleObject(pi.hProcess, 5000)) {
-							TerminateProcess(pi.hProcess, ERROR_TIMEOUT);
+						// switched desktop,
+						if (!isWaitForNotIdle) {
+							// terminate it
+							SetEvent(hExitEvent);
+							if (WAIT_TIMEOUT == WaitForSingleObject(pi.hProcess, 5000)) {
+								TerminateProcess(pi.hProcess, ERROR_TIMEOUT);
+							}
+							ResetEvent(hExitEvent);
+							CloseHandle(pi.hProcess);
+							// wait for moment
+							Sleep(200);
+							// and restart
+							goto cp_start;
 						}
-						ResetEvent(hExitEvent);
-						CloseHandle(pi.hProcess);
-						// wait for moment
-						Sleep(200);
-						// and restart
-						goto cp_start;
+						else {
+							// someone used the computer!
+							// quit...
+							delete[] cl;
+							cl = nullptr;
+							SetEvent(hExitEvent);
+							if (WAIT_TIMEOUT == WaitForSingleObject(pi.hProcess, 5000)) {
+								TerminateProcess(pi.hProcess, ERROR_TIMEOUT);
+							}
+							ResetEvent(hExitEvent);
+							CloseHandle(pi.hProcess);
+							if (act_desk) CloseDesktop(act_desk);
+							return 0;
+						}
 					}
 				}
 			}
@@ -632,20 +686,34 @@ int __stdcall MyServiceChild_IdleNotify_Worker(CmdLineW& cl) {
 	::hExitEvent = (HANDLE)(LONG_PTR)atoll(ws2s(exev).c_str());
 
 	if (cl.getopt(L"wait-for-not-idle")) {
-		POINT pt{}, pt_last{};
-		GetCursorPos(&pt_last);
-		while (1) {
-			GetCursorPos(&pt);
-			if (
-				(pt.x != pt_last.x || pt.y != pt_last.y) ||
-				(WaitForSingleObject(hExitEvent, 0) == WAIT_OBJECT_0)
-			) {
-				// Not idle
-				break;
-			}
-			Sleep(1000);
-			continue;
+		WCHAR wclass[256]{};
+		LoadStringW(hInst, IDS_STRING_UI_CLASS_LIDLENTF, wclass, 256);
+
+		WNDCLASSEXW wcex{};
+		wcex.cbSize = sizeof(wcex);
+		wcex.hInstance = hInst;
+		wcex.lpszClassName = wclass;
+		wcex.lpfnWndProc = WndProc_IdleNotify;
+		RegisterClassExW(&wcex);
+
+		HWND hw = CreateWindowExW(0, wclass, L"", WS_OVERLAPPED, 0, 0, 1, 1, 0, 0, 0, 0);
+		if (!hw) return GetLastError();
+		_idlechk_info.hwnd = hw;
+
+		hIdleCheckHook = SetWindowsHookEx(WH_KEYBOARD_LL,
+			_IdleCheck_KbHookProc, hInst, 0);
+		_idlechk_last_noidle_time = 0;
+
+		HANDLE ht = CreateThread(0, 0, _IdleCheck_Thread_$02, 0, 0, 0);
+		if (ht) CloseHandle(ht);
+
+		MSG msg{};
+		while (GetMessage(&msg, 0, 0, 0)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
 		}
+
+		if (hIdleCheckHook) UnhookWindowsHookEx(hIdleCheckHook);
 		return 0;
 	}
 

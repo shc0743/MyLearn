@@ -680,8 +680,8 @@ WndProcSwitchCase(WM_CREATE) {
 		if (tip.empty()) tip = L"You haven't used this computer for some time, "
 			"so we're about to run the scheduled task.";
 		if (timer.empty()) timer = L"Run after %s second(s) (%t)";
-		if (ok.empty()) ok = L"Run &now";
-		if (cancel.empty()) cancel = L"&Cancel this schedule";
+		if (ok.empty()) ok = L"Run &now (Enter)";
+		if (cancel.empty()) cancel = L"&Cancel this schedule (Esc)";
 		if (noshow_des.empty()) noshow_des = L"Do not show again within:";
 
 		str_replace(tip, L"\\n", L"\r\n");
