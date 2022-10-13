@@ -1,0 +1,126 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// 非特定语言(默认值) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEUD)
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
+#pragma code_page(936)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,2,0,0
+ PRODUCTVERSION 1,2,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040004b0"
+        BEGIN
+            VALUE "CompanyName", "Company"
+            VALUE "FileDescription", "Run Your Program When Computer is Unused"
+            VALUE "FileVersion", "1.2.0.0"
+            VALUE "InternalName", "MyRunProgramWhenComputerUnused.exe"
+            VALUE "LegalCopyright", "Open Source under GPL-3.0 License."
+            VALUE "OriginalFilename", "MyRunProgramWhenComputerUnused.exe"
+            VALUE "ProductName", "MyRunProgramWhenComputerUnused"
+            VALUE "ProductVersion", "1.2.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x400, 1200
+    END
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_STRING_APP_UUID     "b0064cd6-c52f-4d9e-a141-36ffefddabc2"
+    IDS_STRING_APP_GUID     "{8E034479-8FF6-4BDA-9621-299143B9FE9C}"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_STRING_UI_CLASS_IDLENOTIFY 
+                            "Window.class.MyRunProgramWhenComputerUnused@b0064cd6c52f4d9ea14136ffefddabc2.window.idlenotify"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_STRING_UI_CLASS_CONFIG 
+                            "Window.class.MyRunProgramWhenComputerUnused@b0064cd6c52f4d9ea14136ffefddabc2.window.config"
+    IDS_STRING_UI_CLASS_EXECTIP
+                            "Window.class.MyRunProgramWhenComputerUnused@b0064cd6c52f4d9ea14136ffefddabc2.window.ExecTip"
+END
+
+#endif    // 非特定语言(默认值) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
