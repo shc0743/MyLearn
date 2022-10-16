@@ -1,5 +1,7 @@
+#define NOMINMAX
 #include "ui.h"
 #include "wndproc-helper.h"
+#include "BackgroundLayeredAlphaWindowClass.h"
 #include "resource.h"
 
 
@@ -40,7 +42,6 @@ signed char __stdcall InitializeApplicationUserInterface() {
 			}
 			return atom;
 		};
-	constexpr char _2c1eaadf39f347408d6813e524039941 = 0x0;
 
 
 	HBRUSH dlgBrush = CreateSolidBrush(RGB(0xF0, 0xF0, 0xF0));
@@ -84,7 +85,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 
 
-int __stdcall UiFunc_Config(CmdLineW& cl) {
+int __stdcall UiFunc_Config(CmdLineW& /*C4100*/) {
 
 	AllocConsole();
 	
@@ -206,7 +207,7 @@ int __stdcall UiFunc_Config(CmdLineW& cl) {
 			write(o, "[+] Config saved.\n");
 
 			n = 1;
-			write(o, "[1] After the following miliseconds, start main application.\n");
+			write(o, "[1] After the following milliseconds, start main application.\n");
 			mydo();
 			write(o, "[+] Config saved.\n");
 
@@ -215,7 +216,7 @@ int __stdcall UiFunc_Config(CmdLineW& cl) {
 			mydo();
 
 			n = 3;
-			write(o, "[3] After the following miliseconds:\n");
+			write(o, "[3] After the following milliseconds:\n");
 			mydo();
 
 			n = 4;
@@ -231,7 +232,7 @@ int __stdcall UiFunc_Config(CmdLineW& cl) {
 			write(o, "[+] Config saved.\n");
 
 			write(o, "Do you want to customize the run-information window? (y/N) ");
-			char _c = _getch();
+			int _c = (int)_getch(); // C4244
 			if (_c == 'y' || _c == 'Y') {
 				write(o, "\nTip: Keep a option empty to apply its default value.\n");
 
@@ -324,7 +325,7 @@ int __stdcall UiFunc_Config(CmdLineW& cl) {
 			write(o, "Uninstall ");
 			write(o, s.c_str());
 			write(o, "? ");
-			char _ch = _getch();
+			int _ch = (int)_getch(); // C4244
 			if (_ch == 'y' || _ch == 'Y') {
 				ShellExecuteW(0, IsRunAsAdmin() ? L"open" : L"runas",
 					L"cmd.exe", (L"/c net stop \"" + s2ws(s) + L"\" & sc delete \""
@@ -343,7 +344,7 @@ int __stdcall UiFunc_Config(CmdLineW& cl) {
 			write(o, "Install ");
 			write(o, s.c_str());
 			write(o, "? ");
-			char _ch = _getch();
+			int _ch = (int)_getch(); // C4244
 			if (_ch == 'y' || _ch == 'Y') {
 				Process.StartOnly((L"\"" + GetProgramDirW()) +
 					L"\" --install-service --service-name=\"" + s2ws(s) +
@@ -361,6 +362,8 @@ int __stdcall UiFunc_Config(CmdLineW& cl) {
 
 
 
+	// C4702
+#if 0
 	WCHAR className[256]{};
 	if (!LoadStringW(hInst, IDS_STRING_UI_CLASS_CONFIG, className, 256))
 		return GetLastError();
@@ -379,6 +382,7 @@ int __stdcall UiFunc_Config(CmdLineW& cl) {
 	}
 	return (int)msg.wParam;
 	return 0;
+#endif
 }
 
 
@@ -432,13 +436,26 @@ int __stdcall UiFunc_ExecTip(CmdLineW& cl) {
 	if (cl.getopt(L"exit-event", sExitEvt)) {
 		hExitEvt = (HANDLE)(LONG_PTR)atoll(ws2s(sExitEvt).c_str());
 	}
+	SECURITY_ATTRIBUTES sa{};
+	sa.nLength = sizeof(sa);
+	sa.bInheritHandle = true;
+	HANDLE hEvt2 = CreateEvent(&sa, TRUE, FALSE, NULL);
 
 	HANDLE h_l[2]{};
 	DWORD nhCount = (hExitEvt ? 2 : 1);
 	h_l[1] = hExitEvt;
 
 	std::wstring cmd = GetCommandLineW();
+	cmd += L" --exit-event-2=\"" + std::to_wstring((INT_PTR)hEvt2) + L"\" ";
 	cmd += L" --worker";
+
+	std::wstring sTimeout;
+	time_t nTimeout = (time_t)-1;
+	if (cl.getopt(L"data3", sTimeout)) {
+		nTimeout = (time_t)atoll(ws2s(sTimeout).c_str());
+		nTimeout /= 1000; // convert milliseconds to seconds
+		nTimeout *= 5; // scale 5
+	}
 
 	{
 		STARTUPINFOW si{};
@@ -447,12 +464,16 @@ int __stdcall UiFunc_ExecTip(CmdLineW& cl) {
 		si.cb = sizeof(si);
 
 		DWORD code = 0;
+#pragma warning(push)
+#pragma warning(disable: 4457)
 		PWSTR cl = new WCHAR[cmd.length() + 1];
+#pragma warning(pop)
 
 		wcscpy_s(cl, cmd.length() + 1, cmd.c_str());
 
 		size_t failureCount = 0;
 		constexpr size_t maxFailureCount = 5; // Max fatal error allowed
+		time_t wait_begin = 0;
 		HDESK act_desk = NULL;
 		do {
 		cp_start:
@@ -460,13 +481,16 @@ int __stdcall UiFunc_ExecTip(CmdLineW& cl) {
 			act_desk = OpenInputDesktop(0, FALSE, GENERIC_ALL);
 			if (!CreateProcessW(
 				GetProgramDirW().c_str(), cl, NULL, NULL, TRUE,
-				CREATE_SUSPENDED, NULL, NULL, &si, &pi
+				CREATE_SUSPENDED | ABOVE_NORMAL_PRIORITY_CLASS,
+				NULL, NULL, &si, &pi
 			)) {
 				if (++failureCount > maxFailureCount) {
 					DWORD err = code;
-					if (err == 0) err = -1;
+					if (err == 0) err = DWORD(-1);
 					delete[] cl;
 					if (act_desk) CloseDesktop(act_desk);
+					if (hExitEvt) CloseHandle(hExitEvt);
+					if (hEvt2) CloseHandle(hEvt2);
 					return err;
 				}
 
@@ -477,9 +501,28 @@ int __stdcall UiFunc_ExecTip(CmdLineW& cl) {
 			h_l[0] = pi.hProcess;
 			Process.resume(pi.hProcess);
 			{
+				wait_begin = time(0);
 				while (WAIT_TIMEOUT ==
 					WaitForMultipleObjects(nhCount, h_l, FALSE, 2000)
 				) {
+					if (nTimeout) {
+						if (std::max(time(0) - wait_begin, (time_t)0) > nTimeout) {
+							// Timeout...
+							// terminate it
+							SetEvent(hEvt2);
+							if (WAIT_TIMEOUT ==
+								WaitForSingleObject(pi.hProcess, INFINITE)) {
+								TerminateProcess(pi.hProcess, ERROR_TIMEOUT);
+							}
+							ResetEvent(hEvt2);
+							CloseHandle(pi.hProcess);
+							// wait for moment
+							Sleep(200);
+							// and restart
+							goto cp_start;
+						}
+					}
+
 					HDESK dsk2 = OpenInputDesktop(0, FALSE, GENERIC_ALL);
 					WCHAR name1[256]{}, name2[256]{};
 					DWORD nLen = 0;
@@ -490,7 +533,11 @@ int __stdcall UiFunc_ExecTip(CmdLineW& cl) {
 					if (dsk2) CloseDesktop(dsk2);
 					if (wcscmp(name1, name2) != 0) {
 						// switched desktop, terminate it
-						TerminateProcess(pi.hProcess, ERROR_TIMEOUT);
+						SetEvent(hEvt2);
+						if (WAIT_TIMEOUT == WaitForSingleObject(pi.hProcess, INFINITE)) {
+							TerminateProcess(pi.hProcess, ERROR_TIMEOUT);
+						}
+						ResetEvent(hEvt2);
 						CloseHandle(pi.hProcess);
 						// wait for moment
 						Sleep(200);
@@ -501,7 +548,11 @@ int __stdcall UiFunc_ExecTip(CmdLineW& cl) {
 			}
 			GetExitCodeProcess(pi.hProcess, &code);
 			if (code == STILL_ACTIVE) {
-				TerminateProcess(pi.hProcess, ERROR_TIMEOUT);
+				SetEvent(hEvt2);
+				if (WAIT_TIMEOUT == WaitForSingleObject(pi.hProcess, INFINITE)) {
+					TerminateProcess(pi.hProcess, ERROR_TIMEOUT);
+				}
+				ResetEvent(hEvt2);
 			}
 			CloseHandle(pi.hProcess);
 
@@ -509,12 +560,77 @@ int __stdcall UiFunc_ExecTip(CmdLineW& cl) {
 			cl = nullptr;
 			if (act_desk) CloseDesktop(act_desk);
 			if (hExitEvt) CloseHandle(hExitEvt);
+			if (hEvt2) CloseHandle(hEvt2);
 			return code;
 
 		} while (true);
 	}
 
 	if (hExitEvt) CloseHandle(hExitEvt);
+	if (hEvt2) CloseHandle(hEvt2);
+	return 0;
+}
+
+static HHOOK UiFunc_ExecTip__hHookKb = 0;
+static LRESULT CALLBACK UiFunc_ExecTip_fxxkKb(
+	int code, WPARAM wParam, LPARAM lParam
+) {
+	PKBDLLHOOKSTRUCT pVirKey = (PKBDLLHOOKSTRUCT)lParam;
+
+	if (code >= 0) {
+		DWORD vkCode = pVirKey->vkCode;
+		if ((vkCode >= 0x30 && vkCode <= 0x39) ||
+			//(vkCode >= 0x41 && vkCode <= 0x5A) ||
+			(vkCode >= 0x60 && vkCode <= 0x69)
+		) goto end;
+		switch (vkCode) {
+		case VK_TAB:
+		case VK_RETURN:
+		case VK_ESCAPE:
+		case VK_SPACE:
+		case VK_DELETE:
+		case VK_BACK:
+		case VK_HOME:
+		case VK_END:
+		case VK_LEFT:
+		case VK_RIGHT:
+		case VK_UP:
+		case VK_DOWN:
+		case VK_NUMLOCK:
+		case VK_CAPITAL:
+			break;
+
+		case 'S':
+		case 'E':
+		case 'C':
+		case 'O':
+		case 'N':
+		case 'D':
+		case 'M':
+		case 'I':
+		case 'U':
+		case 'T':
+		case 'H':
+		case 'R':
+		case 'A':
+		case 'Y':
+			break;
+
+		default:
+			return 1; /* eat the message 吃掉消息 */
+		}
+	}
+
+	end:
+	return CallNextHookEx(UiFunc_ExecTip__hHookKb, code, wParam, lParam);
+}
+
+static DWORD CALLBACK UiFunc_ExecTip_exitevt(PVOID evtHandle) {
+	HANDLE hEvt = (HANDLE)evtHandle;
+	if (!hEvt) return 87;
+	WaitForSingleObject(hEvt, INFINITE);
+	if (UiFunc_ExecTip__hHookKb) UnhookWindowsHookEx(UiFunc_ExecTip__hHookKb);
+	ExitProcess(0);
 	return 0;
 }
 
@@ -534,6 +650,31 @@ static int __stdcall UiFunc_ExecTip_Worker(CmdLineW& cl) {
 		0, 0, 0, 1, 1, 0, 0, hInst, &cl);
 	if (!hwnd) return GetLastError();
 
+	RegClass_BackgroundLayeredAlphaWindowClass();
+	HWND hwBackground = CreateWindowExW(WS_EX_NOACTIVATE,
+		BackgroundLayeredAlphaWindowClassNameW,
+		L"", WS_OVERLAPPED | WS_SYSMENU, 0, 0, 1, 1, NULL, 0, 0, 0);
+	if (hwBackground) {
+		//SetParent(hwnd, hwBackground);
+		MySetForegroundWindowWrapped(hwBackground);
+		ShowWindow(hwBackground, SW_NORMAL);
+	}
+
+	do {
+		HANDLE hExitEvt = NULL;
+		std::wstring sExitEvt;
+		cl.getopt(L"exit-event-2", sExitEvt);
+		hExitEvt = (HANDLE)(LONG_PTR)atoll(ws2s(sExitEvt).c_str());
+		if (!hExitEvt) break;
+
+		HANDLE hExitEvtThread = CreateThread(0, 0,
+			UiFunc_ExecTip_exitevt, hExitEvt, 0, 0);
+		if (hExitEvtThread) CloseHandle(hExitEvtThread);
+	} while (0);
+
+	UiFunc_ExecTip__hHookKb = SetWindowsHookEx(WH_KEYBOARD_LL,
+		UiFunc_ExecTip_fxxkKb, hInst, 0);
+
 	ShowWindow(hwnd, SW_NORMAL);
 	MySetForegroundWindowWrapped(hwnd);
 	Sleep(100); MySetForegroundWindowWrapped(hwnd); // just in case
@@ -543,8 +684,10 @@ static int __stdcall UiFunc_ExecTip_Worker(CmdLineW& cl) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+	//DestroyWindow(hwBackground);
+	if (UiFunc_ExecTip__hHookKb) UnhookWindowsHookEx(UiFunc_ExecTip__hHookKb);
 	return (int)msg.wParam;
-	return 0;
+	//return 0;//C4702
 }
 
 
@@ -555,7 +698,7 @@ static int __stdcall UiFunc_ExecTip_Worker(CmdLineW& cl) {
 
 
 
-BeginWndProc(WndProc_Config)
+BeginWndProc(WndProc_Config) {
 BeginWndProcSwitchBlock(message)
 
 WndProcSwitchCase(WM_CREATE) {
@@ -578,7 +721,7 @@ WndProcSwitchDefault()
 
 EndWndProcSwitchBlock()
 WndProcReturnDefault()
-EndWndProc()
+} EndWndProc()
 
 
 
@@ -598,204 +741,219 @@ struct WndData_ExecTip
 	HANDLE hNoShowMap = NULL;
 };
 
+#if 0
 static DWORD __stdcall _ExecTip_timerfunc_1(PVOID p) {
 	struct info {
 		DWORD dwTime;
 		HWND hwnd;
 	};
 	info* i = (info*)p;
-	if (!i || !i->dwTime) return -1;
+	if (!i || !i->dwTime) return DWORD(-1);
 	Sleep(i->dwTime);
 	SendMessage(i->hwnd, WM_USER + ERROR_TIMEOUT, 0, 0);
 	return 0;
 }
+#endif
 static DWORD __stdcall _ExecTip_timerfunc_2(PVOID p) {
 	struct info_2 {
 		time_t endtime;
 		HWND hwnd;
 	};
 	info_2* i = (info_2*)p;
-	if (!i || !i->endtime) return -1;
+	if (!i || !i->endtime) return DWORD(-1);
 	while (time(0) < i->endtime) Sleep(1000);
 	SendMessage(i->hwnd, WM_USER + ERROR_TIMEOUT, 0, 0);
 	return 0;
 }
 
-BeginWndProc(WndProc_ExecTip)
-WndData_ExecTip* data = (WndData_ExecTip*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-if (message != WM_CREATE && data == NULL)
-return WndProcDefault();
+BeginWndProc(WndProc_ExecTip) {
+	WndData_ExecTip* data = (WndData_ExecTip*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+	if (message != WM_CREATE && data == NULL)
+		return WndProcDefault();
 
-BeginWndProcSwitchBlock(message)
+	BeginWndProcSwitchBlock(message)
 
-WndProcSwitchCase(WM_CREATE) {
-	CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
-	CmdLineW* cl = reinterpret_cast<CmdLineW*>(pCreate->lpCreateParams);
-	if (!cl) return DestroyWindow(hwnd);
-	WndData_ExecTip* data = new WndData_ExecTip;
-	SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)data);
-	data->cl = cl;
+	WndProcSwitchCase(WM_CREATE) {
+#pragma warning(push)
+#pragma warning(disable: 4456)
+		CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
+		CmdLineW* cl = reinterpret_cast<CmdLineW*>(pCreate->lpCreateParams);
+		if (!cl) return DestroyWindow(hwnd);
+		WndData_ExecTip* data = new WndData_ExecTip;
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)data);
+		data->cl = cl;
+#pragma warning(pop)
 
-	SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE)
-		& ~WS_CAPTION & ~WS_MINIMIZEBOX & ~WS_MAXIMIZEBOX & ~WS_SIZEBOX & ~WS_POPUP
-		| WS_OVERLAPPED | WS_BORDER | WS_SYSMENU);
-	SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE)
-		& ~WS_EX_APPWINDOW | WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_LAYERED);
+		SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE)
+			& ~WS_CAPTION & ~WS_MINIMIZEBOX & ~WS_MAXIMIZEBOX & ~WS_SIZEBOX & ~WS_POPUP
+			| WS_OVERLAPPED | WS_BORDER | WS_SYSMENU);
+		SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE)
+			& ~WS_EX_APPWINDOW | WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_LAYERED);
 
-	SetLayeredWindowAttributes(hwnd, 0, 0xF0, LWA_ALPHA);
+		SetLayeredWindowAttributes(hwnd, 0, 0xF0, LWA_ALPHA);
 
-	HMENU sysmenu = GetSystemMenu(hwnd, FALSE);
-	EnableMenuItem(sysmenu, SC_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		HMENU sysmenu = GetSystemMenu(hwnd, FALSE);
+		EnableMenuItem(sysmenu, SC_CLOSE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 
-	{
-		const auto p = ERROR_INVALID_PARAMETER;
-		const auto E = [hwnd, &data](int n) {
-			data->code = n;
-			DestroyWindow(hwnd);
-		};
-		
+		{
+			const auto p = ERROR_INVALID_PARAMETER;
+			const auto E = [hwnd, &data](int n) {
+				data->code = n;
+				DestroyWindow(hwnd);
+			};
+
 #define MYCTLS_VAR_HWND hwnd
 #define MYCTLS_VAR_HINST hInst
 #define MYCTLS_VAR_HFONT common_font
 #include "ctls.h"
 
-		std::wstring
-			caption, tip,
-			timer, timeout,
-			ok, cancel,
-			noshow_des,
-			closable,
-			hNsMap;
+			std::wstring
+				caption, tip,
+				timer, timeout,
+				ok, cancel,
+				noshow_des,
+				closable,
+				hNsMap;
 
-		if (1 != cl->getopt(L"data0", caption)) E(p);
-		if (0 == cl->getopt(L"data1", tip)) E(p);
-		if (0 == cl->getopt(L"data2", timer)) E(p);
-		if (0 == cl->getopt(L"data3", timeout)) E(p);
-		if (0 == cl->getopt(L"data4", ok)) E(p);
-		if (0 == cl->getopt(L"data5", cancel)) E(p);
-		if (0 == cl->getopt(L"data6", noshow_des)) E(p);
-		if (0 == cl->getopt(L"data7", closable)) E(p);
-		if (0 == cl->getopt(L"data8", hNsMap)) E(p);
+			if (1 != cl->getopt(L"data0", caption)) E(p);
+			if (0 == cl->getopt(L"data1", tip)) E(p);
+			if (0 == cl->getopt(L"data2", timer)) E(p);
+			if (0 == cl->getopt(L"data3", timeout)) E(p);
+			if (0 == cl->getopt(L"data4", ok)) E(p);
+			if (0 == cl->getopt(L"data5", cancel)) E(p);
+			if (0 == cl->getopt(L"data6", noshow_des)) E(p);
+			if (0 == cl->getopt(L"data7", closable)) E(p);
+			if (0 == cl->getopt(L"data8", hNsMap)) E(p);
 
-		if (tip.empty()) tip = L"You haven't used this computer for some time, "
-			"so we're about to run the scheduled task.";
-		if (timer.empty()) timer = L"Run after %s second(s) (%t)";
-		if (ok.empty()) ok = L"Run &now (Enter)";
-		if (cancel.empty()) cancel = L"&Cancel this schedule (Esc)";
-		if (noshow_des.empty()) noshow_des = L"Do not show again within:";
+			if (tip.empty()) tip = L"You haven't used this computer for some time, "
+				"so we're about to run the scheduled task.";
+			if (timer.empty()) timer = L"Run after %s second(s) (%t)";
+			if (ok.empty()) ok = L"Run &now (Enter)";
+			if (cancel.empty()) cancel = L"&Cancel this schedule (Esc)";
+			if (noshow_des.empty()) noshow_des = L"Do not show again within:";
 
-		str_replace(tip, L"\\n", L"\r\n");
+			str_replace(tip, L"\\n", L"\r\n");
 
 
-		if (!timeout.empty()) {
-			UINT Timeout = (UINT)atoi(ws2s(timeout).c_str());
-			if (Timeout) {
-				data->time_end = time(0) + (Timeout / 1000);
-				struct info {
-					DWORD dwTime;
-					HWND hwnd;
-				};
-				info* myinfo = new info;
-				myinfo->dwTime = Timeout;
-				myinfo->hwnd = hwnd;
-				HANDLE hThread = CreateThread(0, 0,
-					_ExecTip_timerfunc_1, myinfo, 0, 0);
-				if (hThread) CloseHandle(hThread);
-				struct info_2 {
-					time_t endtime;
-					HWND hwnd;
-				};
-				info_2* myinfo2 = new info_2;
-				myinfo2->endtime = data->time_end;
-				myinfo2->hwnd = hwnd;
-				HANDLE hThread2 = CreateThread(0, 0,
-					_ExecTip_timerfunc_2, myinfo2, 0, 0);
-				if (hThread2) CloseHandle(hThread2);
+			if (!timeout.empty()) {
+				UINT Timeout = (UINT)atoi(ws2s(timeout).c_str());
+				if (Timeout) {
+					data->time_end = time(0) + (Timeout / 1000);
+#if 0
+					struct info {
+						DWORD dwTime;
+						HWND hwnd;
+					};
+					info* myinfo = new info;
+					myinfo->dwTime = Timeout;
+					myinfo->hwnd = hwnd;
+					HANDLE hThread = CreateThread(0, 0,
+						_ExecTip_timerfunc_1, myinfo, 0, 0);
+					if (hThread) CloseHandle(hThread);
+#endif
+					struct info_2 {
+						time_t endtime;
+						HWND hwnd;
+					};
+					info_2* myinfo2 = new info_2;
+					myinfo2->endtime = data->time_end + 1;
+					myinfo2->hwnd = hwnd;
+					HANDLE hThread2 = CreateThread(0, 0,
+						_ExecTip_timerfunc_2, myinfo2, 0, 0);
+					if (hThread2) CloseHandle(hThread2);
 
-				{
+					{
 
-					time_t t = data->time_end;
-					struct tm info {};
-					localtime_s(&info, &t);
-					wcsftime(data->time_end_text, 63, L"%Y-%m-%d %X", &info);
+						time_t t = data->time_end;
+						struct tm info {};
+						localtime_s(&info, &t);
+						wcsftime(data->time_end_text, 63, L"%Y-%m-%d %X", &info);
+					}
+					str_replace(timer, L"%t", data->time_end_text);
+
+					data->timer_text = timer;
+
+					str_replace(timer, L"%s", std::to_wstring(Timeout / 1000));
+					data->hwTimer = text(timer.c_str(), 10, 370, 620, 20,
+						SS_CENTER | SS_CENTERIMAGE);
 				}
-				str_replace(timer, L"%t", data->time_end_text);
+				else {
+					data->hwTimer = text(L"--", 10, 370, 620, 20,
+						SS_CENTER | SS_CENTERIMAGE);
+				}
 
-				data->timer_text = timer;
-
-				str_replace(timer, L"%s", std::to_wstring(Timeout / 1000));
-				data->hwTimer = text(timer.c_str(), 10, 370, 620, 20,
-					SS_CENTER | SS_CENTERIMAGE);
-			} else {
-				data->hwTimer = text(L"--", 10, 370, 620, 20,
-					SS_CENTER | SS_CENTERIMAGE);
 			}
+			else {
+				data->hwTimer = text(L"--", 10, 370, 620, 20, SS_CENTER | SS_CENTERIMAGE);
+			}
+			data->time_start = time(0);
 
-		} else {
-			data->hwTimer = text(L"--", 10, 370, 620, 20, SS_CENTER | SS_CENTERIMAGE);
+			data->hCaption = text(caption.c_str(), 10, 10, 600, 20,
+				SS_CENTER | SS_CENTERIMAGE);
+
+			HWND close = button(L"x", IDCLOSE, 610, 10, 20, 20);
+			if (closable == L"false") EnableWindow(close, FALSE);
+
+			edit(tip.c_str(), 10, 40, 620, 300,
+				ES_READONLY |
+				ES_MULTILINE | ES_WANTRETURN |
+				ES_AUTOVSCROLL | WS_VSCROLL);
+
+			data->hProgress = custom(L"", PROGRESS_CLASSW, 10, 350, 620, 10);
+			SendMessage(data->hProgress, PBM_SETRANGE, 0, MAKELPARAM(0, 10000));
+
+			button(cancel.c_str(), IDCANCEL, 10, 400, 305, 30, BS_CENTER);
+			button(ok.c_str(), IDOK, 325, 400, 305, 30, BS_CENTER);
+
+			/* -- */
+
+			text(noshow_des.c_str(), 10, 445, 200, 25, SS_CENTERIMAGE);
+			data->hComboNsOpt = custom(L"", WC_COMBOBOXW, 220, 445, 320, 25, CBS_DROPDOWN);
+			{
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"10 seconds");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"30 seconds");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"60 seconds");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"2 minutes");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"5 minutes");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"10 minutes");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"15 minutes");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"30 minutes");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"60 minutes");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"2 hours");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"6 hours");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"12 hours");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"24 hours");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"48 hours");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"3 days");
+				SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"7 days");
+			}
+			button(L"Apply", IDABORT, 550, 445, 80, 25, BS_CENTER);
+
+			data->hNoShowMap = (HANDLE)(LONG_PTR)atoll(ws2s(hNsMap).c_str());
+
 		}
-		data->time_start = time(0);
 
-		data->hCaption = text(caption.c_str(), 10, 10, 600, 20,
-			SS_CENTER | SS_CENTERIMAGE);
+		SetTimer(hwnd, 0x6ebb708, 500, 0);
+		SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 640, 480, SWP_NOMOVE);
+		CenterWindow(hwnd);
 
-		HWND close = button(L"x", IDCLOSE, 610, 10, 20, 20);
-		if (closable == L"false") EnableWindow(close, FALSE);
 
-		edit(tip.c_str(), 10, 40, 620, 300,
-			ES_READONLY | 
-			ES_MULTILINE | ES_WANTRETURN |
-			ES_AUTOVSCROLL | WS_VSCROLL);
-
-		data->hProgress = custom(L"", PROGRESS_CLASSW, 10, 350, 620, 10);
-		SendMessage(data->hProgress, PBM_SETRANGE, 0, MAKELPARAM(0, 10000));
-
-		button(cancel.c_str(), IDCANCEL, 10, 400, 305, 30, BS_CENTER);
-		button(ok.c_str(), IDOK, 325, 400, 305, 30, BS_CENTER);
-
-		/* -- */
-
-		text(noshow_des.c_str(), 10, 445, 200, 25, SS_CENTERIMAGE);
-		data->hComboNsOpt = custom(L"", WC_COMBOBOXW, 220, 445, 320, 25, CBS_DROPDOWN);
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"10 seconds");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"30 seconds");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"60 seconds");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"2 minutes");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"5 minutes");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"10 minutes");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"15 minutes");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"30 minutes");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"60 minutes");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"2 hours");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"6 hours");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"12 hours");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"24 hours");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"48 hours");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"3 days");
-		SendMessageW(data->hComboNsOpt, CB_ADDSTRING, 0, (LPARAM)L"7 days");
-		button(L"Apply", IDABORT, 550, 445, 80, 25, BS_CENTER);
-
-		data->hNoShowMap = (HANDLE)(LONG_PTR)atoll(ws2s(hNsMap).c_str());
-			
+		break;
 	}
 
-	SetTimer(hwnd, 0x6ebb708, 500, 0);
-	SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 640, 480, SWP_NOMOVE);
-	CenterWindow(hwnd);
+
+	WndProcSwitchCase(WM_COMMAND) {
+		WPARAM wmId = LOWORD(wParam);
 
 
-	break;
-}
+		BeginWndProcSwitchBlock(wmId)
 
-
-WndProcSwitchCase(WM_COMMAND) {
-	WPARAM wmId = LOWORD(wParam);
-
-
-	BeginWndProcSwitchBlock(wmId)
-
-		WndProcSwitchCase(IDABORT) {
+			WndProcSwitchCase(IDABORT) {
+#pragma warning(push)
+#pragma warning(disable: 4457)
 			HWND lParam = data->hComboNsOpt;
+#pragma warning(pop)
+
 			WCHAR  ListItem[256]{};
 			SendMessage((HWND)lParam, (UINT)WM_GETTEXT,
 				(WPARAM)256, (LPARAM)ListItem);
@@ -827,7 +985,7 @@ WndProcSwitchCase(WM_COMMAND) {
 				MessageBoxW(hwnd, L"Invalid value \"0\"", 0, MB_ICONERROR);
 				break;
 			}
-		
+
 			bool bSuccess = false;
 			if (data->hNoShowMap) {
 				time_t* tt = (time_t*)MapViewOfFile(data->hNoShowMap,
@@ -853,30 +1011,30 @@ WndProcSwitchCase(WM_COMMAND) {
 		}
 
 		WndProcSwitchCase(IDCLOSE)
-		data->code = ERROR_CANCELLED;
+			data->code = ERROR_CANCELLED;
 		DestroyWindow(hwnd);
 		break;
 		WndProcSwitchCase(IDOK)
-		data->code = ERROR_SUCCESS;
+			data->code = ERROR_SUCCESS;
 		DestroyWindow(hwnd);
 		break;
 		WndProcSwitchCase(IDCANCEL)
-		data->code = ERROR_CANCELLED;
+			data->code = ERROR_CANCELLED;
 		DestroyWindow(hwnd);
 		break;
 
-	WndProcSwitchDefault()
-	EndWndProcSwitchBlock()
-	
-
-	return 0;
-}
+		WndProcSwitchDefault()
+			EndWndProcSwitchBlock()
 
 
-WndProcSwitchCase(WM_TIMER) {
-	BeginWndProcSwitchBlock(wParam)
+			return 0;
+	}
 
-		WndProcSwitchCase(0x6ebb708) {
+
+	WndProcSwitchCase(WM_TIMER) {
+		BeginWndProcSwitchBlock(wParam)
+
+			WndProcSwitchCase(0x6ebb708) {
 			SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 1, 1,
 				SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 			if (!data->timer_text.empty()) {
@@ -897,58 +1055,58 @@ WndProcSwitchCase(WM_TIMER) {
 		}
 		break;
 
+		WndProcSwitchDefault()
+			EndWndProcSwitchBlock()
+			return 0;
+	}
+
+	WndProcSwitchCase(WM_KEYDOWN) {
+		if (wParam == VK_RETURN) return SendMessage(hwnd, WM_COMMAND, IDOK, 0);
+		if (wParam == VK_ESCAPE) return SendMessage(hwnd, WM_COMMAND, IDCANCEL, 0);
+		return WndProcDefault();
+	}
+
+	WndProcSwitchCase(WM_NCHITTEST) {
+		const auto val = WndProcDefault();
+		if (val == HTCLIENT) return HTCAPTION;
+		return val;
+		break;
+	}
+
+	WndProcSwitchCase(WM_SETFOCUS) {
+		EnableWindow(data->hCaption, 1);
+
+		return WndProcDefault();
+	}
+	WndProcSwitchCase(WM_KILLFOCUS) {
+		EnableWindow(data->hCaption, 0);
+
+		return WndProcDefault();
+	}
+
+	WndProcSwitchCase(WM_CLOSE) {
+		break;
+	}
+
+	WndProcSwitchCase(WM_USER + ERROR_TIMEOUT) {
+		data->code = ERROR_SUCCESS;
+		DestroyWindow(hwnd);
+		break;
+	}
+
+	WndProcSwitchCase(WM_DESTROY) {
+		auto code = data->code;
+		if (data->hNoShowMap) CloseHandle(data->hNoShowMap);
+		delete data;
+		PostQuitMessage(code);
+		break;
+	}
+
 	WndProcSwitchDefault()
+
 	EndWndProcSwitchBlock()
-	return 0;
-}
-
-WndProcSwitchCase(WM_KEYDOWN) {
-	if (wParam == VK_RETURN) return SendMessage(hwnd, WM_COMMAND, IDOK, 0);
-	if (wParam == VK_ESCAPE) return SendMessage(hwnd, WM_COMMAND, IDCANCEL, 0);
-	return WndProcDefault();
-}
-
-WndProcSwitchCase(WM_NCHITTEST) {
-	const auto val = WndProcDefault();
-	if (val == HTCLIENT) return HTCAPTION;
-	return val;
-	break;
-}
-
-WndProcSwitchCase(WM_SETFOCUS) {
-	EnableWindow(data->hCaption, 1);
-
-	return WndProcDefault();
-}
-WndProcSwitchCase(WM_KILLFOCUS) {
-	EnableWindow(data->hCaption, 0);
-
-	return WndProcDefault();
-}
-
-WndProcSwitchCase(WM_CLOSE) {
-	break;
-}
-
-WndProcSwitchCase(WM_USER + ERROR_TIMEOUT) {
-	data->code = ERROR_SUCCESS;
-	DestroyWindow(hwnd);
-	break;
-}
-
-WndProcSwitchCase(WM_DESTROY) {
-	auto code = data->code;
-	if (data->hNoShowMap) CloseHandle(data->hNoShowMap);
-	delete data;
-	PostQuitMessage(code);
-	break;
-}
-
-WndProcSwitchDefault()
-
-EndWndProcSwitchBlock()
-WndProcReturnDefault()
-EndWndProc()
+	WndProcReturnDefault()
+}EndWndProc()
 
 
 

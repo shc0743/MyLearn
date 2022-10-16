@@ -124,7 +124,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
@@ -133,16 +133,21 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\resource\tool.cpp" />
+    <ClCompile Include="BackgroundLayeredAlphaWindowClass.cpp" />
     <ClCompile Include="svc.cpp" />
     <ClCompile Include="svc_child.cpp" />
     <ClCompile Include="ui.cpp" />
@@ -151,10 +156,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\resource\tool.h" />
+    <ClInclude Include="BackgroundLayeredAlphaWindowClass.h" />
     <ClInclude Include="ctls.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="svc.h" />
     <ClInclude Include="ui.h" />
+    <ClInclude Include="util.h" />
     <ClInclude Include="wndproc-helper.h" />
   </ItemGroup>
   <ItemGroup>

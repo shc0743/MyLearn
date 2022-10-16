@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>--type=ui --ui-type=exectip --data0=data0 --data1 --data2 --data3 --data4 --data5 --data6 --data7 --data8</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--type=service-main --config="do_nothing.conf" --service-name="TestService" --exit-event=</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)\..\bin\</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>

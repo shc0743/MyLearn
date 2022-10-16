@@ -1,14 +1,33 @@
 #include <Windows.h>
 #include <string>
+
+#include "util.h"
+
 #include "../../resource/tool.h"
 
 
 
 
+static bool __stdcall AlwaysReturnTrue() {
+	return true;
+}
+
+
+
+
 DWORD __stdcall subprocess_loader_worker(
-	std::wstring str, HANDLE i, HANDLE o, HANDLE* p,
+	std::wstring str, HANDLE* p, HANDLE i, HANDLE o
+) {
+	return subprocess_loader_worker_ex(
+		str, p, i, o, AlwaysReturnTrue, false, 0, 0, NULL
+	);
+}
+
+DWORD __stdcall subprocess_loader_worker_ex(
+	std::wstring str, HANDLE* p, HANDLE i, HANDLE o,
 	bool(__stdcall*condition)(),
-	bool enableReturnWhenValue, DWORD returnWhenValue
+	bool enableReturnWhenValue, DWORD returnWhenValue,
+	DWORD dwWaitForChildExitTimeout, HANDLE hExitEvt
 ) {
 	STARTUPINFOW si{};
 	PROCESS_INFORMATION pi{};
@@ -40,7 +59,7 @@ DWORD __stdcall subprocess_loader_worker(
 			if (retryCount++ < maxRetryCountIn1s) continue; // retry
 			if (++failureCount > maxFailureCount) {
 				DWORD err = code;
-				if (err == 0) err = -1;
+				if (err == 0) err = DWORD(-1);
 				delete[] cl;
 				return err;
 			}
@@ -56,13 +75,19 @@ DWORD __stdcall subprocess_loader_worker(
 		GetExitCodeProcess(pi.hProcess, &code);
 		CloseHandle(pi.hProcess);
 
+		if (dwWaitForChildExitTimeout && hExitEvt) {
+			SetEvent(hExitEvt);
+			Sleep(dwWaitForChildExitTimeout);
+			ResetEvent(hExitEvt);
+		}
+
 		if (enableReturnWhenValue && code == returnWhenValue) return returnWhenValue;
 
 		if (time(0) - lastTime <= 2) retryCount++;
 		if (retryCount > maxRetryCountIn1s) {
 			if (++failureCount > maxFailureCount) {
 				DWORD err = code;
-				if (err == 0) err = -1;
+				if (err == 0) err = DWORD(-1);
 				delete[] cl;
 				return err;
 			}
