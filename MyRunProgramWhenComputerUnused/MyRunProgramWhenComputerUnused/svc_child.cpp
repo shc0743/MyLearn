@@ -1,4 +1,5 @@
 #include "svc.h"
+#include "util.h"
 
 #include "resource.h"
 
@@ -10,7 +11,7 @@ using namespace std;
 
 extern HINSTANCE hInst;
 static HANDLE hConfMap;
-static HANDLE hExitEvent;
+static HANDLE hExitEvent, hExitEventC;
 static HANDLE hIdleNotifyEvent;
 static wstring gSvcName;
 
@@ -38,23 +39,147 @@ struct _config {
 static _config* config;
 
 
-DWORD __stdcall subprocess_loader_worker(
-	std::wstring str, HANDLE i, HANDLE o, HANDLE* p,
-	bool(__stdcall* condition)(),
-	bool enableReturnWhenValue, DWORD returnWhenValue
-);
-HANDLE MyCreateMemmap(DWORD size, DWORD hw);
-
 static DWORD __stdcall MyServiceChildThread_IdleNotify(PVOID);
 static int __stdcall MyServiceChild(CmdLineW& cl);
 static int __stdcall MyServiceChild_IdleNotify(CmdLineW& cl);
 
 
+#if 0
+static DWORD __stdcall th_ExitOnParentDied(PVOID p = NULL) {
+	if (p == NULL) {
+		HANDLE hThread = CreateThread(0, 0,
+			th_ExitOnParentDied, INVALID_HANDLE_VALUE, 0, 0);
+		bool success = (bool)hThread;
+		if (hThread) CloseHandle(hThread);
+		return (DWORD)(success ? 0 : GetLastError());
+	}
+	DWORD pid = Process.GetParentProcessId(GetCurrentProcessId());
+	HANDLE hProc = OpenProcess(
+		PROCESS_QUERY_INFORMATION |
+		PROCESS_QUERY_LIMITED_INFORMATION |
+		SYNCHRONIZE,
+		FALSE, pid);
+	if (!hProc) return GetLastError();
+	WaitForSingleObject(hProc, INFINITE);
+	GetExitCodeProcess(hProc, &pid);
+	CloseHandle(hProc);
+	Process.close();
+	ExitProcess((UINT)pid);
+	return (DWORD)-1;
+}
+#endif
+
+static DWORD __stdcall MyServiceChildMain_th_ExitOnParentDied(PVOID p = NULL) {
+	if (p == NULL) {
+		HANDLE hThread = CreateThread(0, 0, MyServiceChildMain_th_ExitOnParentDied,
+			INVALID_HANDLE_VALUE, 0, 0);
+		bool success = (bool)hThread;
+		if (hThread) CloseHandle(hThread);
+		return (DWORD)(success ? 0 : GetLastError());
+	}
+	DWORD pid = Process.GetParentProcessId(GetCurrentProcessId());
+	HANDLE hProc = OpenProcess(
+		PROCESS_QUERY_INFORMATION |
+		PROCESS_QUERY_LIMITED_INFORMATION |
+		SYNCHRONIZE,
+		FALSE, pid);
+	if (!hProc) return GetLastError();
+	WaitForSingleObject(hProc, INFINITE);
+	GetExitCodeProcess(hProc, &pid);
+	CloseHandle(hProc);
+	Process.close();
+	SetEvent(hIdleNotifyEvent);
+	ExitProcess((UINT)pid);
+	return (DWORD)-1;
+}
+
+static void __stdcall WaitIfSession0OrInvalid(DWORD default_wait_delay = 5000) {
+	DWORD dwActiveSessionId, dwTemp2;
+	WTSINFOW wtsInfo{};
+	bool needWait;
+	//PWTS_SESSION_INFOW pWtsSessionInfo;
+	PWSTR pWtsUserName;
+
+begin:
+
+	dwActiveSessionId = WTSGetActiveConsoleSessionId();
+	needWait = false;
+	dwTemp2 = 0;
+	//pWtsSessionInfo = NULL;
+	pWtsUserName = NULL;
+
+	if (dwActiveSessionId == 0 || dwActiveSessionId == (DWORD)0xFFFFFFFF) {
+		needWait = true;
+	}
+#if 0
+	else if(pWtsSessionInfo) {
+#if 0
+
+#elif 0
+		if (WTSEnumerateSessionsW(WTS_CURRENT_SERVER_HANDLE,
+			0, 1, &pWtsSessionInfo, &dwTemp2)
+		) {
+			needWait = true;
+			for (DWORD dwI = 0; dwI < dwTemp2; ++dwI) {
+				if (pWtsSessionInfo[dwI].SessionId == dwActiveSessionId) {
+					needWait = false;
+					break;
+				}
+			}
+			WTSFreeMemory(pWtsSessionInfo);
+		}
+#elif 1
+#endif
+	}
+	else {
+		// failed to alloc memory...
+
+		goto end;
+	}
+#else
+	else {
+		if (WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE,
+			dwActiveSessionId, WTSUserName, &pWtsUserName, &dwTemp2)
+		) {
+			if (
+				std::wstring(pWtsUserName).empty()
+			) {
+				// in system session
+				needWait = true;
+			}
+			else {
+				needWait = false;
+			}
+
+			// Debug only
+#if 0
+			system(("echo [log] [DEBUG] svc_child.cpp:157, " +
+				ws2s(pWtsUserName) + " >> svc_my.log").c_str());
+#endif
+
+			WTSFreeMemory(pWtsUserName);
+		}
+	}
+#endif
+
+	if (needWait) {
+		//while ((dwTemp2 = WTSGetActiveConsoleSessionId()) == dwActiveSessionId)
+		{
+			Sleep(default_wait_delay);
+		}
+		dwActiveSessionId = dwTemp2;
+		goto begin;
+	}
+
+//end:
+
+	return;
+}
+
+
 
 int __stdcall MyServiceChildMain_svc(CmdLineW& cl) {
 	using namespace std;
-
-	EnableAllPrivileges();
 
 	wstring type;
 	cl.getopt(L"type", type);
@@ -65,6 +190,10 @@ int __stdcall MyServiceChildMain_svc(CmdLineW& cl) {
 	if (type != L"service-main") {
 		return -1;
 	}
+
+	EnableAllPrivileges();
+
+	MyServiceChildMain_th_ExitOnParentDied();
 
 	wstring cfg;
 	if (cl.getopt(L"config", cfg) != 1) return ERROR_INVALID_PARAMETER;
@@ -78,6 +207,10 @@ int __stdcall MyServiceChildMain_svc(CmdLineW& cl) {
 	else {
 		hExitEvent = (HANDLE)(ULONG_PTR)atoll(ws2s(exit_evt).c_str());
 	}
+	if (1 == cl.getopt(L"exit-event-2", exit_evt)) {
+		hIdleNotifyEvent = (HANDLE)(ULONG_PTR)atoll(ws2s(exit_evt).c_str());
+	}
+
 
 	wstring
 		rwh/*run when start*/,
@@ -185,7 +318,10 @@ int __stdcall MyServiceChildMain_svc(CmdLineW& cl) {
 		if (!(h_list[i - 1])) count_to_wait--;
 	}
 
-	WaitForMultipleObjects(count_to_wait, h_list, FALSE, INFINITE);
+	HANDLE* phList = h_list;
+	if (h_list[0] == NULL) phList += 1;
+
+	WaitForMultipleObjects(count_to_wait, phList, FALSE, INFINITE);
 
 	if (h_list[1]) SuspendThread(h_list[1]);
 
@@ -224,13 +360,13 @@ static DWORD __thread_idle_notifier(wstring cmd, HANDLE thExitEvent, size_t type
 	if (type == 0) bFlag = true;
 	do {
 	cp_start:
-		if (active_session == 0) {
-			while (1) {
-				Sleep(5000);
-				active_session = WTSGetActiveConsoleSessionId();
-				if (active_session != 0) break;
-			}
-		}
+		WaitIfSession0OrInvalid(5000);
+		// Debug only
+#if 0
+		system(("echo execute __thread_idle_notifier, code " + to_string(type) +
+			", active session " + to_string(active_session) +
+			" >> mylog-service.log").c_str());
+#endif
 		if (!CreateProcessInSession(active_session,
 			GetProgramDirW().c_str(), cl, NULL, NULL, TRUE,
 			CREATE_SUSPENDED, NULL, NULL, &si, &pi
@@ -242,7 +378,7 @@ static DWORD __thread_idle_notifier(wstring cmd, HANDLE thExitEvent, size_t type
 			if (retryCount++ < maxRetryCountIn1s) continue; // retry
 			if (++failureCount > maxFailureCount) {
 				DWORD err = code;
-				if (err == 0) err = -1;
+				if (err == 0) err = (DWORD)-1;
 				delete[] cl;
 				return err;
 			}
@@ -254,7 +390,8 @@ static DWORD __thread_idle_notifier(wstring cmd, HANDLE thExitEvent, size_t type
 
 		Process.resume(pi.hProcess);
 		if (type == 0 || type == 2 || type == 1) {
-			while (WAIT_TIMEOUT == WaitForSingleObject(pi.hProcess, 2000)) {
+			do {
+				WaitIfSession0OrInvalid(5000);
 				if (active_session != WTSGetActiveConsoleSessionId()) {
 					// switched session,
 					if (type == 2) {
@@ -284,11 +421,15 @@ static DWORD __thread_idle_notifier(wstring cmd, HANDLE thExitEvent, size_t type
 					active_session = WTSGetActiveConsoleSessionId();
 					goto cp_start;
 				}
-			}
+			} while (WAIT_TIMEOUT == WaitForSingleObject(pi.hProcess, 2000));
 		}
 		else WaitForSingleObject(pi.hProcess, INFINITE);
 		GetExitCodeProcess(pi.hProcess, &code);
 		CloseHandle(pi.hProcess);
+
+		SetEvent(thExitEvent);
+		Sleep(1000);
+		ResetEvent(thExitEvent);
 
 		if (type == 0) {
 			switch (code) {
@@ -366,32 +507,31 @@ static DWORD _MyServiceChild_IdleExec(size_t type) {
 			L"--data7=\"" + data7 + L"\" "
 			L"--data8=\"" + data8 + L"\" ";
 
-		bool bFlagUserUsingComputer = false;
+		DWORD ret = 0;
 		auto val = __thread_idle_notifier(cmd, NULL, 1);
 		if (val == 0) {
 			Process.StartOnly(config->idle_run);
 		}
 		else {
-			bFlagUserUsingComputer = true;
+			ret = 0xF0006690;
 		}
 
-		if (pNoShowAgainWithin) {
-			if (*pNoShowAgainWithin) {
-				DWORD active_session = WTSGetActiveConsoleSessionId();
-				while (time(0) < *pNoShowAgainWithin) {
-					Sleep(5000);
-					if (active_session != WTSGetActiveConsoleSessionId()) {
-						break; // switched user, reset time
-					}
+		if (pNoShowAgainWithin && (*pNoShowAgainWithin)) {
+			DWORD active_session = WTSGetActiveConsoleSessionId();
+			while (time(0) < *pNoShowAgainWithin) {
+				Sleep(5000);
+				if (active_session != WTSGetActiveConsoleSessionId()) {
+					break; // switched user, reset time
 				}
 			}
+
+			ret = 0xF0006680;
 		}
 
 		if (pNoShowAgainWithin) UnmapViewOfFile(pNoShowAgainWithin);
 		if (hFileMap) CloseHandle(hFileMap);
 
-		if (bFlagUserUsingComputer) return 0xF0006690;
-		return 0;
+		return ret;
 	}
 	if (type == 1) {
 		Process.StartOnly(config->nidle_run);
@@ -406,7 +546,8 @@ DWORD __stdcall MyServiceChildThread_IdleNotify(PVOID) {
 	sa.nLength = sizeof(sa);
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = NULL;
-	hIdleNotifyEvent = CreateEvent(&sa, TRUE, FALSE, NULL);
+	if (!hIdleNotifyEvent)
+		hIdleNotifyEvent = CreateEvent(&sa, TRUE, FALSE, NULL);
 	if (!hIdleNotifyEvent) return GetLastError();
 
 	wstring cmd = L"ServiceChildProcess --type=service-child "
@@ -426,13 +567,29 @@ DWORD __stdcall MyServiceChildThread_IdleNotify(PVOID) {
 
 		// idle notifier
 		__thread_idle_notifier(cmd, hIdleNotifyEvent, 0);
+		WaitIfSession0OrInvalid(5000);
+		// Computer is idle now!
 		// start idle_run
-		if (_MyServiceChild_IdleExec(0) != 0xF0006690 /* runned */) {
+		auto run_result = _MyServiceChild_IdleExec(0);
+		if (run_result == 0xF0006680) {
+			// didn't run: user had set a wait value 
+			// either the program waited
+			// or the session switched
+
+		}
+		else if (run_result == 0xF0006690) {
+			// didn't run: user cancelled
+
+		}
+		else /* runned */ {
 			ResetEvent(hIdleNotifyEvent);
 			// wait for not idle
 			__thread_idle_notifier(cmd_eic, hIdleNotifyEvent, 2);
 		}
-		// start nidle_run
+
+		// either someone used this computer
+		// or the user did something
+		// so, start nidle_run
 		_MyServiceChild_IdleExec(1);
 
 	}
@@ -445,6 +602,8 @@ int __stdcall MyServiceChild(CmdLineW& cl) {
 	using namespace std;
 	wstring ctype;
 	cl.getopt(L"child-type", ctype);
+
+	//th_ExitOnParentDied();
 
 
 	if (ctype == L"idle-notify") {
@@ -497,9 +656,13 @@ static DWORD __stdcall _IdleCheck_Cursor(PVOID) {
 
 	//SendMessage(hwnd, WM_USER + WM_ENTERIDLE, 0, 0);
 	if (hIdleCheckHook) UnhookWindowsHookEx(hIdleCheckHook);
-	ExitProcess(-ERROR_ACTIVE_CONNECTIONS);
+	Process.close();
+	ExitProcess((UINT) - ERROR_ACTIVE_CONNECTIONS);
 
+#pragma warning(push)
+#pragma warning(disable: 4702)
 	return 0;
+#pragma warning(pop)
 }
 static LRESULT CALLBACK _IdleCheck_KbHookProc(
 	int    nCode,
@@ -532,8 +695,12 @@ static DWORD __stdcall _IdleCheck_Thread_$02(PVOID) {
 	}
 	//SendMessage(_idlechk_info.hwnd, WM_USER + WM_QUIT, 0, 0);
 	if (hIdleCheckHook) UnhookWindowsHookEx(hIdleCheckHook);
+	Process.close();
 	ExitProcess(0);
+#pragma warning(push)
+#pragma warning(disable: 4702)
 	return 0;
+#pragma warning(pop)
 }
 
 static LRESULT CALLBACK WndProc_IdleNotify(HWND hw, UINT msg, WPARAM wp, LPARAM lp) {
@@ -576,7 +743,7 @@ int __stdcall MyServiceChild_IdleNotify(CmdLineW& cl) {
 	std::wstring cmd = GetCommandLineW();
 	cmd += L" --worker";
 	
-	bool isWaitForNotIdle = (cl.getopt(L"wait-for-not-idle"));
+	bool isWaitForNotIdle = bool(cl.getopt(L"wait-for-not-idle"));
 
 	HANDLE h_l[2]{};
 	h_l[0] = hExitEvent;
@@ -588,7 +755,10 @@ int __stdcall MyServiceChild_IdleNotify(CmdLineW& cl) {
 		si.cb = sizeof(si);
 
 		DWORD code = 0;
+#pragma warning(push)
+#pragma warning(disable: 4457)
 		PWSTR cl = new WCHAR[cmd.length() + 1];
+#pragma warning(pop)
 
 		wcscpy_s(cl, cmd.length() + 1, cmd.c_str());
 
@@ -605,7 +775,7 @@ int __stdcall MyServiceChild_IdleNotify(CmdLineW& cl) {
 			)) {
 				if (++failureCount > maxFailureCount) {
 					DWORD err = code;
-					if (err == 0) err = -1;
+					if (err == 0) err = (DWORD)-1;
 					delete[] cl;
 					if (act_desk) CloseDesktop(act_desk);
 					return err;
@@ -744,13 +914,17 @@ int __stdcall MyServiceChild_IdleNotify_Worker(CmdLineW& cl) {
 
 	_idlechk_last_noidle_time = time(0);
 
-	HANDLE hNewThreadWait = CreateThread(0, 0, [](PVOID p) -> DWORD {
+	HANDLE hNewThreadWait = CreateThread(0, 0, [](PVOID) -> DWORD {
 		WaitForSingleObject(hExitEvent, INFINITE);
 		//SendMessage((HWND)p, WM_USER + WM_QUIT, 0, 0);
 		if (hIdleCheckHook) UnhookWindowsHookEx(hIdleCheckHook);
+		Process.close();
 		ExitProcess(ERROR_TIMEOUT);
+#pragma warning(push)
+#pragma warning(disable: 4702)
 		return 0;
-	}, hw, 0, 0);
+#pragma warning(pop)
+		}, hw, 0, 0);
 	if (hNewThreadWait) CloseHandle(hNewThreadWait);
 
 	
@@ -771,7 +945,7 @@ int __stdcall MyServiceChild_IdleNotify_Worker(CmdLineW& cl) {
 	CloseHandle(hConfMap);
 	if (hIdleCheckHook) UnhookWindowsHookEx(hIdleCheckHook);
 	if (hNewThreadCurChk) {
-		TerminateThread(hNewThreadCurChk, -1);
+		TerminateThread(hNewThreadCurChk, DWORD(-1));
 		CloseHandle(hNewThreadCurChk);
 	}
 	return (int)msg.wParam;

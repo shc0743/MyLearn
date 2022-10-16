@@ -1,4 +1,5 @@
 #include "svc.h"
+#include "util.h"
 
 
 
@@ -12,6 +13,7 @@ static std::wstring            gSvcConfigFile;
 static HANDLE                  gSvcProcess;
 static HANDLE                  gSvcThread;
 static HANDLE                  gSvcExitEvent;
+static HANDLE                  gSvcChildEvt$2;
 
 static VOID WINAPI    SvcCtrlHandler(DWORD);
 static bool __stdcall UpdateSvcStatus();
@@ -45,10 +47,13 @@ static DWORD __stdcall SvcHandle_Start(PVOID) {
 		gSvcStatus.dwCheckPoint = 0;
 		UpdateSvcStatus();
 		ExitProcess(err);
-		return 1;
+#pragma warning(push)
+#pragma warning(disable: 4457)
+		return err;
+#pragma warning(pop)
 	};
 
-	constexpr unsigned char max_retry_count = 3;
+	//constexpr unsigned char max_retry_count = 3;
 
 	{
 		wstring szPath = GetProgramDirW();
@@ -68,6 +73,7 @@ static DWORD __stdcall SvcHandle_Start(PVOID) {
 	if (!gSvcExitEvent) {
 		return report_last_error();
 	}
+	gSvcChildEvt$2 = CreateEvent(&sa, TRUE, FALSE, NULL);
 	gSvcStatus.dwCheckPoint++;
 	UpdateSvcStatus();
 
@@ -159,6 +165,20 @@ VOID WINAPI SvcCtrlHandler(DWORD dwCtrl)
 		gSvcStatus.dwWaitHint = 0;
 		//UpdateSvcStatus();
 		break;
+#else
+		gSvcStatus.dwControlsAccepted = 0;
+		gSvcStatus.dwCurrentState = SERVICE_STOP_PENDING;
+		gSvcStatus.dwWin32ExitCode = 0;
+		gSvcStatus.dwCheckPoint = 0;
+		gSvcStatus.dwWaitHint = 4096;
+		UpdateSvcStatus();
+
+		if (HANDLE h = CreateThread(0, 0, SvcHandle_Stop,
+			(PVOID)ERROR_SHUTDOWN_IN_PROGRESS, 0, 0))
+			CloseHandle(h);
+
+		gSvcStatus.dwCheckPoint ++;
+		break;
 #endif
 	}
 
@@ -168,12 +188,21 @@ VOID WINAPI SvcCtrlHandler(DWORD dwCtrl)
 		gSvcStatus.dwWin32ExitCode = 0;
 		gSvcStatus.dwCheckPoint = 0;
 		gSvcStatus.dwWaitHint = 8192;
+		UpdateSvcStatus();
 
 		if (HANDLE h = CreateThread(0, 0, SvcHandle_Stop, 0, 0, 0))
 			CloseHandle(h);
-		return;
+
+		gSvcStatus.dwCheckPoint ++;
+		break;
 
 	case SERVICE_CONTROL_PAUSE:
+		if (gSvcStatus.dwCurrentState != SERVICE_RUNNING) {
+			gSvcStatus.dwWin32ExitCode = ERROR_SERVICE_CANNOT_ACCEPT_CTRL;
+			UpdateSvcStatus();
+			return;
+		}
+
 		gSvcStatus.dwCurrentState = SERVICE_PAUSE_PENDING;
 		gSvcStatus.dwWin32ExitCode = 0;
 		gSvcStatus.dwCheckPoint = 0;
@@ -184,6 +213,12 @@ VOID WINAPI SvcCtrlHandler(DWORD dwCtrl)
 		break;
 
 	case SERVICE_CONTROL_CONTINUE:
+		if (gSvcStatus.dwCurrentState != SERVICE_PAUSED) {
+			gSvcStatus.dwWin32ExitCode = ERROR_SERVICE_CANNOT_ACCEPT_CTRL;
+			UpdateSvcStatus();
+			return;
+		}
+
 		gSvcStatus.dwCurrentState = SERVICE_CONTINUE_PENDING;
 		gSvcStatus.dwWin32ExitCode = 0;
 		gSvcStatus.dwCheckPoint = 0;
@@ -202,15 +237,32 @@ VOID WINAPI SvcCtrlHandler(DWORD dwCtrl)
 	UpdateSvcStatus();
 }
 
-DWORD WINAPI SvcHandle_Stop(PVOID) {
+DWORD WINAPI SvcHandle_Stop(PVOID param) {
 
+	// 
+	if ((DWORD)(INT_PTR)(param) == (ERROR_SHUTDOWN_IN_PROGRESS)) {
+		// shutdown in progress
+
+	}
+	else {
+		// common stop
+		Sleep(DWORD(rand() % 2000 + 500));
+	}
+
+	if (gSvcExitEvent) {
+		SetEvent(gSvcExitEvent);
+		CloseHandle(gSvcExitEvent);
+	}
+	if (gSvcChildEvt$2) {
+		SetEvent(gSvcChildEvt$2);
+		CloseHandle(gSvcChildEvt$2);
+	}
 	if (gSvcThread) {
 		SuspendThread(gSvcThread);
 		CloseHandle(gSvcThread);
 	}
 	if (gSvcProcess) {
 		//s7::CallNtTerminateProcess(gSvcProcess, 0);
-		SetEvent(gSvcExitEvent);
 		CloseHandle(gSvcProcess);
 	}
 	gSvcStatus.dwCheckPoint++;
@@ -220,7 +272,6 @@ DWORD WINAPI SvcHandle_Stop(PVOID) {
 	UpdateSvcStatus();
 
 
-	//Sleep(1024);
 	gSvcStatus.dwCurrentState = SERVICE_STOPPED;
 	gSvcStatus.dwWin32ExitCode = 0;
 	gSvcStatus.dwCheckPoint = 0;
@@ -257,24 +308,19 @@ DWORD WINAPI SvcHandle_Continue(PVOID) {
 
 
 
-DWORD __stdcall subprocess_loader_worker(
-	std::wstring str, HANDLE i, HANDLE o, HANDLE* p,
-	bool(__stdcall* condition)(),
-	bool enableReturnWhenValue, DWORD returnWhenValue
-);
-
 
 
 DWORD __stdcall svc_main(PVOID) {
 	std::wstring cmd = L"\"" + GetProgramDirW() + L"\" ";
 	cmd += L"--type=service-main --config=\"" + gSvcConfigFile + L"\" "
 		"--service-name=\"" + gSvcName + L"\" "
-		"--exit-event=" + std::to_wstring(LONG_PTR(gSvcExitEvent)) + L" ";
+		"--exit-event=" + std::to_wstring(LONG_PTR(gSvcExitEvent)) + L" "
+		"--exit-event-2=" + std::to_wstring(LONG_PTR(gSvcChildEvt$2)) + L" ";
 
-	subprocess_loader_worker(cmd, 0, 0, &gSvcProcess, [] {
+	subprocess_loader_worker_ex(cmd, &gSvcProcess, 0, 0, [] {
 		return (gSvcStatus.dwCurrentState != SERVICE_STOPPED) &&
 			(gSvcStatus.dwCurrentState != SERVICE_STOP_PENDING);
-	}, false, 0);
+	}, false, 0, 2000, gSvcChildEvt$2);
 
 	return 0;
 }
