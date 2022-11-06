@@ -1,14 +1,8 @@
 LIBRARY
 
+
 EXPORTS
-	CreateDownloadTask
-	CreateDownloadTaskW
-	CreateDownloadTaskExW
-	BeginDownloadTask
-	PauseDownloadTask
-	ResumeDownloadTask
-	QueryDownloadTaskStat
-	CancelDownloadTask
-	TerminateDownloadTask
-	GetCurrentDownloadConfig
-	ConfigDownload
+	GetVersion
+	OpenLicense
+
+
