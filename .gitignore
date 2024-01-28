@@ -31,7 +31,12 @@
 *.out
 *.app
 #*.exe
-*.lnk
+#*.lnk
 
 # Others
 *.aps
+ipch
+Browse.VC.db
+FileContentIndex
+fileList.bin
+out
