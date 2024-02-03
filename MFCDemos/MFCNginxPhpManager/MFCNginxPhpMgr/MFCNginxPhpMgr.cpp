@@ -13,6 +13,7 @@
 #include "../../resource/tool.h"
 #include "CDlgCheckPhpCgi.h"
 #include "CDlgSetup.h"
+using namespace std;
 
 
 // CMFCNginxPhpMgrApp
@@ -100,7 +101,7 @@ CMFCNginxPhpMgrApp::CMFCNginxPhpMgrApp()
 		LPTSTR cWinDir = new TCHAR[MAX_PATH];
 		::GetCurrentDirectory(MAX_PATH, cWinDir);
 
-		STRING sConLin_s = L"\"" + s2ws(::GetProgramDir()) + L"\" --php-fastcgi";
+		wstring sConLin_s = L"\"" + s2ws(::GetProgramDir()) + L"\" --php-fastcgi";
 
 		//创建亿个新进程  
 		if (!Process.StartOnly(sConLin_s)){

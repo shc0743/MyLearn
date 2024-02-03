@@ -37,6 +37,7 @@
 *.aps
 ipch
 Browse.VC.db
+*.VC.db
 FileContentIndex
 fileList.bin
 out

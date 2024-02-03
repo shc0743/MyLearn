@@ -1,5 +1,5 @@
 #pragma once
-#include "../../resource/includer.h"
+#include <Windows.h>
 #include <shellapi.h>
 #include <ShObjIdl.h>
 
@@ -13,7 +13,7 @@ public:
 	BOOL InitInstance(HINSTANCE, int); // Create main window
 	int MessageLoop();
 
-	HWND GetSafeHwnd() { return hWnd; };
+	HWND GetSafeHwnd() const { return hWnd; };
 
 protected:
 

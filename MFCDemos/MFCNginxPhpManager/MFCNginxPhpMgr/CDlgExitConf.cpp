@@ -7,7 +7,7 @@
 #include "afxdialogex.h"
 
 #include"../../resource/tool.h"
-
+using namespace std;
 
 // CDlgExitConf 对话框
 
