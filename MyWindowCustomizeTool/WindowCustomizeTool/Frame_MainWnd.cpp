@@ -1,7 +1,10 @@
 #include "Frame_MainWnd.h"
 #include "resource.h"
 #include <Richedit.h>
+#include "../../resource/tool.h"
 using namespace std;
+#pragma comment(lib, "MyProgressWizardLib64.lib")
+#include "wizard.user.h"
 
 static WCHAR szWindowClass[64] = { 0 };
 static WCHAR szTitle[256] = { 0 };
@@ -410,22 +413,66 @@ LRESULT Frame_MainWnd::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 #endif
 		}
 			break;
-		case ID_MENU_WINDOWMANAGER_CLOSE:
-			SendMessage(wMainWindow->targetHwnd, WM_CLOSE, 0, 0);
+		case ID_MENU_WINDOWMANAGER_CLOSE: {
+			HMPRGOBJ hObj = CreateMprgObject();
+			assert(hObj);
+			HMPRGWIZ hWiz = CreateMprgWizard(hObj, MPRG_CREATE_PARAMS{
+				.cb = sizeof(MPRG_CREATE_PARAMS), .max = size_t(-1)
+				});
+			assert(hWiz);
+			OpenMprgWizard(hWiz);
+
+			if (!SendMessageTimeoutW(wMainWindow->targetHwnd, WM_CLOSE, 0, 0,
+				SMTO_ABORTIFHUNG, 5000, 0)) {
+				CloseHandleIfOk(CreateThread(0, 0, [](PVOID)->DWORD {return
+					PlaySoundW((LPCWSTR)SND_ALIAS_SYSTEMHAND, 0, SND_ALIAS_ID);
+					}, 0, 0, 0));
+				TaskDialog(GetForegroundWindow(), 0, L"Error", L"Cannot finish the operation.",
+					LastErrorStr().c_str(), TDCBF_CANCEL_BUTTON, IDI_ERROR, 0);
+			}
+
+			DestroyMprgWizard(hObj, hWiz);
+			DeleteObject(hObj);
+		}
 			break;
 		case ID_MENU_WINDOWMANAGER_DESTROY:
-			DestroyWindow(wMainWindow->targetHwnd);
+			if (!DestroyWindow(wMainWindow->targetHwnd)) {
+				CloseHandleIfOk(CreateThread(0, 0, [](PVOID)->DWORD {return
+					PlaySoundW((LPCWSTR)SND_ALIAS_SYSTEMHAND, 0, SND_ALIAS_ID);
+					}, 0, 0, 0));
+#pragma comment(lib, "Winmm.lib")
+				TaskDialog(GetForegroundWindow(), 0, L"Error", L"Cannot finish the operation.",
+					LastErrorStr().c_str(), TDCBF_CANCEL_BUTTON, IDI_ERROR, 0);
+			}
 			break;
 		case ID_MENU_WINDOWMANAGER_ENDTASK:
 		{
+			HMPRGOBJ hObj = CreateMprgObject();
+			assert(hObj);
+			HMPRGWIZ hWiz = CreateMprgWizard(hObj, MPRG_CREATE_PARAMS{
+				.cb = sizeof(MPRG_CREATE_PARAMS),
+				.max = size_t(-1)
+				});
+			assert(hWiz);
+			OpenMprgWizard(hWiz);
+
 			typedef BOOL(WINAPI* EndTask_t)(HWND hWnd, BOOL fShutDown, BOOL fForce);
 			HMODULE user32 = GetModuleHandleA("user32.dll");
 			if (user32) {
 				EndTask_t EndTask = (EndTask_t)GetProcAddress(user32, "EndTask");
 				if (EndTask) {
-					EndTask(wMainWindow->targetHwnd, FALSE, FALSE);
+					if (!EndTask(wMainWindow->targetHwnd, FALSE, FALSE)) {
+						CloseHandleIfOk(CreateThread(0, 0, [](PVOID)->DWORD {return
+							PlaySoundW((LPCWSTR)SND_ALIAS_SYSTEMHAND, 0, SND_ALIAS_ID);
+							}, 0, 0, 0));
+						TaskDialog(GetForegroundWindow(), 0, L"Error", L"Cannot finish the operation.",
+							LastErrorStr().c_str(), TDCBF_CANCEL_BUTTON, IDI_ERROR, 0);
+					}
 				}
 			}
+
+			DestroyMprgWizard(hObj, hWiz);
+			DeleteObject(hObj);
 		}
 			break;
 		case ID_MENU_OPTIONS_RUNATLOGON:
@@ -580,7 +627,7 @@ LRESULT Frame_MainWnd::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	}
 		return DefWindowProc(hWnd, message, wParam, lParam);
 		break;
-	case WM_USER+20: // Menu Command Handler
+	case WM_USER+20: { // Menu Command Handler
 		switch (wParam) {
 		case 10: // Hide or Show Icon
 			if (wMainWindow->attributes.noIcon) {
@@ -597,7 +644,7 @@ LRESULT Frame_MainWnd::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 				Shell_NotifyIcon(NIM_DELETE, wMainWindow->pnid);
 				free(wMainWindow->pnid);
 				wMainWindow->pnid = NULL;
-				ShowWindow(hWnd, SW_RESTORE);
+				//ShowWindow(hWnd, SW_RESTORE);
 				{
 					HMENU hMenu = GetMenu(hWnd);
 					hMenu = GetSubMenu(hMenu, 2);
@@ -716,6 +763,7 @@ LRESULT Frame_MainWnd::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			break;
 		default:;
 		}
+	}
 		break;
 	case WM_CONTEXTMENU:
 	{
@@ -867,6 +915,7 @@ LRESULT Frame_MainWnd::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		}
+		[[fallthrough]];
 	case WM_SIZING:
 		wMainWindow->ResizeControls(hWnd);
 		break;
@@ -888,6 +937,7 @@ LRESULT Frame_MainWnd::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			Shell_NotifyIcon(NIM_DELETE, wMainWindow->pnid);
 			wMainWindow->pnid = NULL;
 		}
+		[[fallthrough]];
 	case WM_ENDSESSION:
 		PostQuitMessage(0);
 		break;
@@ -1084,7 +1134,7 @@ void Frame_MainWnd::UpdateHwndInfo() {
 		else EnableMenuItem(hSubMenu, 4, MF_GRAYED | MF_BYPOSITION);
 
 		do {
-			HMENU hmOwnProcess = GetSubMenu(GetSubMenu(hSubMenu, 4), 16);
+			HMENU hmOwnProcess = GetSubMenu(GetSubMenu(hSubMenu, 4), 18);
 			if (!hmOwnProcess) break;
 			MENUITEMINFOW mii; AutoZeroMemory(mii);
 			mii.cbSize = sizeof(mii);
@@ -1395,6 +1445,7 @@ LRESULT CALLBACK Frame_MainWnd::WndProc_resizer
 
 	case WM_KEYDOWN:
 		if (wParam == VK_ESCAPE || wParam == VK_RETURN) DestroyWindow(hWnd);
+		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_DESTROY:
 		if (wMainWindow->hWnd) {

@@ -7,6 +7,7 @@
 #include "../../resource/tool.h"
 #include <VersionHelpers.h>
 #include "Frame_MainWnd.h"
+#include "wizard.user.h"
 using namespace std;
 
 #define ThisInst (GetModuleHandle(NULL))
@@ -38,6 +39,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	CmdLineA cl(GetCommandLineA()); // Command-Line Arguments Parser
+
+	InitMprgComponent();
 
 	if (cl.getopt("enable-run-at-logon") || cl.getopt("disable-run-at-logon")) {
 		HKEY hk = NULL; DWORD rsz = REG_SZ; WCHAR keyname[256] = { 0 };

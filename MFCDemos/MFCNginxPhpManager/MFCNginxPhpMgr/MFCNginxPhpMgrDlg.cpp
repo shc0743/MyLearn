@@ -14,6 +14,12 @@
 #include "../../resource/tool.h"
 #include "CDlgExitConf.h"
 #include "CDlgSetup.h"
+using namespace std;
+
+void ReStart() {
+	Process.StartOnly(L"\"" + GetProgramDirW() + L"\"");
+	ExitProcess(ERROR_RESTART_APPLICATION);
+}
 
 
 // CMFCNginxPhpMgrDlg 对话框
@@ -105,7 +111,7 @@ LRESULT CMFCNginxPhpMgrDlg::onShowTask(WPARAM wParam, LPARAM lParam) //wParam接
 		::SetTimer(NULL, 426638, 2000, ClearClickIconCnt);
 		if (ClickIconCnt++) break;
 		{
-			STRING sConLin_s = L"\"" + s2ws(::GetProgramDir()) + L"\" --gui";
+			wstring sConLin_s = L"\"" + s2ws(::GetProgramDir()) + L"\" --gui";
 			STARTUPINFO si;
 			PROCESS_INFORMATION pi;
 			ZeroMemory(&si, sizeof(si));
@@ -216,7 +222,7 @@ HCURSOR CMFCNginxPhpMgrDlg::OnQueryDragIcon()
 
 void CMFCNginxPhpMgrDlg::OnIconMain(){
 	{
-		STRING sConLin_s = L"\"" + s2ws(::GetProgramDir()) + L"\" --gui";
+		wstring sConLin_s = L"\"" + s2ws(::GetProgramDir()) + L"\" --gui";
 		STARTUPINFO si;
 		PROCESS_INFORMATION pi;
 		ZeroMemory(&si, sizeof(si));

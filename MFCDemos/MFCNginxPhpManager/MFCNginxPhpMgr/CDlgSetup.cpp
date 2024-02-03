@@ -6,6 +6,7 @@
 #include "CDlgSetup.h"
 #include "afxdialogex.h"
 #include"../../resource/tool.h"
+using namespace std;
 
 
 // CDlgSetup 对话框

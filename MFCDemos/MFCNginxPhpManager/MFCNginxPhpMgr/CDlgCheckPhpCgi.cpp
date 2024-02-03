@@ -7,6 +7,7 @@
 #include "afxdialogex.h"
 #include "../../resource/tool.h"
 
+using namespace std;
 
 // CDlgCheckPhpCgi 对话框
 
