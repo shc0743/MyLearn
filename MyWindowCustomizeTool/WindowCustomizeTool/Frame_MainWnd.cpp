@@ -432,7 +432,7 @@ LRESULT Frame_MainWnd::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			}
 
 			DestroyMprgWizard(hObj, hWiz);
-			DeleteObject(hObj);
+			DeleteMprgObject(hObj);
 		}
 			break;
 		case ID_MENU_WINDOWMANAGER_DESTROY:
@@ -472,7 +472,7 @@ LRESULT Frame_MainWnd::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			}
 
 			DestroyMprgWizard(hObj, hWiz);
-			DeleteObject(hObj);
+			DeleteMprgObject(hObj);
 		}
 			break;
 		case ID_MENU_OPTIONS_RUNATLOGON:
@@ -861,7 +861,7 @@ LRESULT Frame_MainWnd::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 			////::Rectangle(DeskDC, rc.left, rc.top, rc.right, rc.bottom);
 			//::SetROP2(DeskDC, oldRop2);
 			////::SelectObject(DeskDC, oldPen);
-			//::DeleteObject(newPen);
+			//::DeleteMprgObject(newPen);
 			//::ReleaseDC(DeskHwnd, DeskDC);
 			//DeskDC = NULL;
 #endif
@@ -1181,7 +1181,7 @@ VOID CALLBACK Frame_MainWnd::TimerProc_WindowSelect
 	//	::Rectangle(DeskDC, rc.left, rc.top, rc.right, rc.bottom);
 	//	::SetROP2(DeskDC, oldRop2);
 	//	::SelectObject(DeskDC, oldPen);
-	//	::DeleteObject(newPen);
+	//	::DeleteMprgObject(newPen);
 	//	::ReleaseDC(DeskHwnd, DeskDC);
 	//	DeskDC = NULL;
 	//	SetWindowTextW(wMainWindow->wTextTargetHwnd, to_wstring((INT_PTR)UnHwnd).c_str());
