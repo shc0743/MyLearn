@@ -16,7 +16,7 @@ async function Load() {
     const disks = Window.this.UI_Main.getDiskList();
     dsk.innerHTML = '';
     if (!disks) {
-        dsk.patch(<option><b>抱歉，出现了问题。请稍后再试。</b></option>)
+        dsk.patch(<option><b>暂无USB存储设备插入。</b></option>)
     } else {
         dsk.patch(disks.map(i => {
             const iar = i.split('|');
@@ -40,10 +40,12 @@ async function Load() {
 
 function loadVolFileChanges() {
     const r = Window.this.UI_Main.findVolumeFileList(diskList.value);
-    if (!r) return;
-
     const rct = document.getElementById('recent');
     rct.innerHTML = '';
+    if (!r) {
+        rct.patch(<span>如果您最近使用了一些文件，那么它们会显示在这里。</span>);
+        return;
+    }
 
     rct.patch(r.map(i => {
         return <div class="recent-file-item" data-file={i.path}>
