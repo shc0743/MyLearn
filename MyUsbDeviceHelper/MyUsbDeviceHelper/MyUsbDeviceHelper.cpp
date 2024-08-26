@@ -347,8 +347,12 @@ public:
 	sciter::value getDevices() {
 		return sciter::value(devices);
 	};
-
+	
+	map<wstring, vector<sciter::value>> findVolumeFileList__cache;
 	sciter::value findVolumeFileList(wstring volume) {
+		if (findVolumeFileList__cache.contains(volume)) {
+			return findVolumeFileList__cache.at(volume); // caching
+		}
 		vector<sciter::value> result;
 		struct my { 
 			sciter::value val;
@@ -386,6 +390,10 @@ public:
 				continue;
 			}
 
+			if (findData.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) {
+				continue; // 排除$Recycle.Bin、System Volume Information一类的特殊文件夹
+			}
+
 			{
 				sciter::value file;
 				file["name"] = wstring(findData.cFileName);
@@ -421,6 +429,7 @@ public:
 
 		for (auto& i : rb) result.push_back(i.val);
 		
+		findVolumeFileList__cache.insert(std::make_pair(volume, result)); // to avoid duplicate finding
 		return result;
 	};
 
@@ -586,7 +595,7 @@ public:
 				VariantClear(&vtProp);
 
 				// 获取 PnPDeviceID  
-				hr = pclsObj->Get(L"PnPDeviceID", 0, &vtProp, 0, 0);
+				hr = pclsObj->Get(L"PNPDeviceID", 0, &vtProp, 0, 0);
 				//wprintf(L"PnPDeviceID : %s\n", vtProp.bstrVal ? vtProp.bstrVal : L"(null)");
 				pnp = vtProp.bstrVal ? vtProp.bstrVal : L"";
 				VariantClear(&vtProp);
@@ -598,7 +607,10 @@ public:
 				for (auto& I : this->devices) try {
 					vector<wstring> _Tmp1; str_split(I, L"|", _Tmp1); wstring i = _Tmp1.size() > 1 ? _Tmp1[1] : L"";
 
-					if (!i.starts_with(L"\\\\?\\USBSTOR#")) continue;
+					if (!(
+						i.starts_with(L"\\\\?\\USBSTOR#") || 
+						i.starts_with(L"\\\\?\\SCSI#Disk")
+					)) continue;
 					str_replace(i, L"#", L"\\");
 					if (i.end() != find_substring_case_insensitive(i, pnp)) {
 						//MessageBox(0, L"found", 0, 0);
@@ -1004,7 +1016,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (wParam)
 		{
 		case CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL: {
-			data->phi_endTime = time(0) + 15;
+			data->phi_endTime = time(0) + 24;
 			if (!data->phInject || !data->phInject->is_valid()) {
 				WCHAR pCurrentDir[MAX_PATH + 16]{};
 				GetCurrentDirectoryW(MAX_PATH + 16, pCurrentDir);
