@@ -344,6 +344,10 @@ public:
 	//	this->pUiData->phi_endTime += 5;
 	//};
 
+	void putTop() {
+		SetWindowPos(get_hwnd(), HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	};
+
 	sciter::value getDevices() {
 		return sciter::value(devices);
 	};
@@ -639,7 +643,7 @@ public:
 			volumeName[2] = L'?';
 			volumeName[48] = L'\\';
 			if (!hFile || hFile == INVALID_HANDLE_VALUE) {
-				{ (MessageBoxW(0, volumeName, LastErrorStrW().c_str(), 0x00000010L)); }
+				//{ (MessageBoxW(0, volumeName, LastErrorStrW().c_str(), 0x00000010L)); }
 				continue;
 			}
 			DWORD dwBytesReturned = 0;
@@ -680,6 +684,7 @@ public:
 	SOM_PASSPORT_BEGIN(UI_Main)
 		SOM_FUNCS(
 			SOM_FUNC(getSomeData),
+			SOM_FUNC(putTop),
 			SOM_FUNC(openDisk),
 			SOM_FUNC(openFile),
 			SOM_FUNC(getDiskList),
@@ -725,7 +730,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			szParam += L" --attach-debug";
 		}
 		execinfo.lpParameters = szParam.c_str();
-		if (!ShellExecuteExW(&execinfo)) return GetLastError();
+		elevate_start:
+		if (!ShellExecuteExW(&execinfo)) {
+			if (MessageBoxTimeoutW(0, L"无法以管理员方式启动程序。\n查询卷所属磁盘需要管理员权限才能进行。"
+				"\n\n是否重试？", 0, MB_ICONERROR | MB_RETRYCANCEL | MB_DEFBUTTON2, 0, 3000) == IDRETRY)
+				goto elevate_start;
+			return GetLastError();
+		}
 		DWORD exitCode = 1;
 		if (execinfo.hProcess) {
 			WaitForSingleObject(execinfo.hProcess, INFINITE);
@@ -1016,11 +1027,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (wParam)
 		{
 		case CM_NOTIFY_ACTION_DEVICEINTERFACEARRIVAL: {
-			data->phi_endTime = time(0) + 24;
+			data->phi_endTime = time(0) + 25;
 			if (!data->phInject || !data->phInject->is_valid()) {
-				WCHAR pCurrentDir[MAX_PATH + 16]{};
-				GetCurrentDirectoryW(MAX_PATH + 16, pCurrentDir);
-				std::wstring full_file_name = pCurrentDir + L"\\.data\\device_arrival.html"s;
+				std::wstring full_file_name = GetProgramDirW() + L".data\\device_arrival.html"s;
 				data->phInject = new UI_Main();
 				data->phInject->asset_add_ref();
 				SciterSetMediaType(data->phInject->get_hwnd(), WSTR("desktop"));
@@ -1055,13 +1064,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			int newY = screenRect.bottom - windowRect.bottom + windowRect.top - 20;
 			SetWindowPos(wnd->get_hwnd(), NULL, newX, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
+			data->phi_endTime = time(0) + 25;
 		}
 			break;
 		case CM_NOTIFY_ACTION_DEVICEINTERFACEREMOVAL: {
 			if (!data->phEject || !data->phEject->is_valid()) {
 				WCHAR pCurrentDir[MAX_PATH + 16]{};
 				GetCurrentDirectoryW(MAX_PATH + 16, pCurrentDir);
-				std::wstring full_file_name = pCurrentDir + L"\\.data\\device_eject.html"s;
+				std::wstring full_file_name = GetProgramDirW() + L".data\\device_eject.html"s;
 				data->phEject = new UI_Main();
 				SciterSetMediaType(data->phEject->get_hwnd(), WSTR("desktop"));
 				data->phEject->load((L"file://" + str_replace(full_file_name, L"\\", L"/")).c_str());
@@ -1070,7 +1080,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			wnd->devices.push_back(mem);
 			wnd->expand(false);
 			SetWindowPos(wnd->get_hwnd(), HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-			SetWindowPos(wnd->get_hwnd(), 0, 0, 0, 150, 100, SWP_NOMOVE | SWP_NOZORDER);
+			SetWindowPos(wnd->get_hwnd(), 0, 0, 0, 250, 125, SWP_NOMOVE | SWP_NOZORDER);
 			RECT screenRect{}, windowRect{};
 			SystemParametersInfo(SPI_GETWORKAREA, 0, &screenRect, 0); // 获取工作区大小，考虑任务栏  
 			GetWindowRect(wnd->get_hwnd(), &windowRect);
@@ -1080,7 +1090,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 #ifndef DEBUG_NO_DISAPPEAR
 			std::thread([data] {
-				Sleep(3000);
+				Sleep(5000);
 				if (!data->phEject) return;
 				data->phEject->request_close();
 				data->phEject = nullptr;

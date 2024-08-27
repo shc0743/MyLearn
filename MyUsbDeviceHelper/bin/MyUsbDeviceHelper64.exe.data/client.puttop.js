@@ -1,0 +1,1 @@
+setInterval(() => Window.this.UI_Main.putTop(), 1000);

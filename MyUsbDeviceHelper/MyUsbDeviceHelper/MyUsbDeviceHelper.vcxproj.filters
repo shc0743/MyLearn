@@ -41,6 +41,9 @@
     <ClCompile Include="..\..\resource\tool.cpp">
       <Filter>资源文件</Filter>
     </ClCompile>
+    <ClCompile Include="commv6.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MyUsbDeviceHelper.rc">

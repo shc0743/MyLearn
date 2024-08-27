@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" window-frame="extended" window-width="400px" window-height="400px">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Device Arrival</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="./global.css" />
+    <link rel="stylesheet" type="text/css" href="./ui.css" />
+</head>
+
+<body style="margin: 0;">
+
+    <main data-fxck-sciter-style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;" data-reason="Sciter bug in new versions, set element position to not static will prevent the element from mouse interfacing">
+        <div class="caption" role="window-caption" style="flow: horizontal;">
+            <span style="width: 1*; vertical-align: middle;">设备已插入</span>
+            <button id="btn_close" style="background-color: #fff; border: gray;">x</button>
+        </div>
+
+        <div style="margin-top: 0.5em; overflow: hidden; white-space: nowrap; flow: horizontal; vertical-align: middle;" id="deviceClassesWrapper">设备实例：<select id="deviceClasses" style="width: 1*;"></select></div>
+        <div style="margin-top: 0.5em; overflow: hidden; white-space: nowrap; flow: horizontal; vertical-align: middle;">磁盘驱动器：<select id="diskList" style="width: 1*;"></select><button style="margin-left: 0.5em;" id="reloadList">刷新列表</button></div>
+
+        <div style="margin-bottom: 1em;"></div>
+        <div style="text-align: center;" id="loading">正在加载...</div>
+        <fieldset id="recentWrapper" hidden style="height: 1*; margin: 0.5em 0; width: 1*; min-width: 100%; box-sizing: border-box; overflow-y: auto;">
+            <div style="color: gray; margin-top: 10px;">最近使用的文件</div>
+
+            <div id="recent"><span>如果您最近使用了一些文件，那么它们会显示在这里。</span></div>
+        </fieldset>
+
+        <button style="width: 1*;" id="openDisk" hidden disabled="disabled">打开 U 盘</button>
+    </main>
+
+    <!-- <script src="./client.puttop.js"></script> -->
+    <script src="./client.arrival.js"></script>
+</body>
+
+</html>

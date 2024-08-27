@@ -154,6 +154,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\resource\tool.cpp" />
     <ClCompile Include="..\sciter\include\sciter-win-main.cpp" />
+    <ClCompile Include="commv6.cpp" />
     <ClCompile Include="MyUsbDeviceHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
