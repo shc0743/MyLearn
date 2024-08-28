@@ -1215,6 +1215,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		MyUnregisterDevNotif();
 		Shell_NotifyIcon(NIM_DELETE, &nid);
 		DestroyMenu(hTrayMenu);
+		delete data;
 		PostQuitMessage(0);
 		break;
 
