@@ -162,8 +162,12 @@ int main()
 	cout << "是否应用这些更改? (y/N) ";
 	if (!getYNInput()) return ERROR_CANCELLED;
 	for (auto& i : files) {
-		wcout << L"正在创建文件... " << i << L"\r";
+		wcout << L"正在创建文件... ";
+		WriteConsoleW(so, i.c_str(), (DWORD)i.length(), &written, 0);
+		WriteConsoleW(so, L"\r", 1, &written, 0);
+		FlushFileBuffers(so);
 		CopyFileW((i + L".tmp").c_str(), i.c_str(), FALSE);
+		Sleep(1000);
 		DeleteFileW((i + L".tmp").c_str());
 	}
 	cout << ErrorCodeToStringA(0) << endl;
