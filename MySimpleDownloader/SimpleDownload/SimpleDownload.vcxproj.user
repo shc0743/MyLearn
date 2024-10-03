@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerCommandArguments>http://192.168.0.103:48720/dl?t=123456&amp;f=%2F%2F%3F%2FVolume%7B0b7bf204-a2a3-41c5-90ec-f646484dc718%7D%2Fold_os.wim&amp;a=old_os.wim test.wim</LocalDebuggerCommandArguments>
+    <LocalDebuggerWorkingDirectory>../bin</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+</Project>
