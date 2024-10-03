@@ -1,0 +1,17 @@
+LIBRARY
+
+EXPORTS
+	CheckCaptcha
+	CreateCaptcha
+	RunCaptcha
+	DestroyCaptcha
+
+	CheckCaptcha_RunDLL
+	RunCaptcha_RunDLL
+
+	CaptchaUtil_generateMathProblem
+	CaptchaUtil_drawMathProblem
+	CaptchaUtil_validateMathProblem
+
+
+
