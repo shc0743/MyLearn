@@ -1,0 +1,3 @@
+usage:
+	psexec.exe -ds <FullPath>\rpias.exe <Program To Run>
+(psexec is in https://learn.microsoft.com/zh-cn/sysinternals/downloads/psexec)
