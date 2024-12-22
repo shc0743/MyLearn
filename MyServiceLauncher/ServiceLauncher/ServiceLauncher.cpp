@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
 					SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS);
 				if (err) {
 					fprintf(stderr, "[ERR] Cannot Create Service: %ld: %s\n",
-						GetLastError(), LastErrorStrA()); return ::GetLastError();
+						GetLastError(), LastErrorStrA().c_str()); return ::GetLastError();
 				}
 				return 0;
 			}
@@ -76,20 +76,20 @@ int main(int argc, char* argv[]) {
 			if (cl[2] == "delete") {
 				if (ServiceManager.Remove(svcname)) {
 					fprintf(stderr, "[ERR] Cannot Delete Service: %ld: %s\n",
-						GetLastError(), LastErrorStrA()); return 1;
+						GetLastError(), LastErrorStrA().c_str()); return 1;
 				} else return 0;
 			}
 
 			if (cl[2] == "start") {
 				if (ServiceManager.Start(svcname)) { fprintf(stderr, "[ERR] Cannot Start "
-					"Service: %ld: %s\n", GetLastError(), LastErrorStrA());
+					"Service: %ld: %s\n", GetLastError(), LastErrorStrA().c_str());
 				}
 				return 0;
 			}
 
 			if (cl[2] == "stop") {
 				if (ServiceManager.Stop(svcname)) { fprintf(stderr, "[ERR] Cannot Stop"
-					" Service: %ld: %s\n", GetLastError(), LastErrorStrA());
+					" Service: %ld: %s\n", GetLastError(), LastErrorStrA().c_str());
 				}
 				return 0;
 			}
@@ -97,21 +97,21 @@ int main(int argc, char* argv[]) {
 			if (cl[2] == "restart") {
 				if (ServiceManager.ReStart(svcname)) {
 					fprintf(stderr, "[ERR] Cannot ReStart Service: %ld: %s\n",
-						GetLastError(), LastErrorStrA());
+						GetLastError(), LastErrorStrA().c_str());
 				}
 				return 0;
 			}
 
 			if (cl[2] == "pause") {
 				if (ServiceManager.Stop(svcname)) { fprintf(stderr, "[ERR] Cannot Pause"
-					" Service: %ld: %s\n", GetLastError(), LastErrorStrA());
+					" Service: %ld: %s\n", GetLastError(), LastErrorStrA().c_str());
 				}
 				return 0;
 			}
 
 			if (cl[2] == "continue") {
 				if (ServiceManager.Stop(svcname)) { fprintf(stderr, "[ERR] Cannot Continue "
-					"Service: %ld: %s\n", GetLastError(), LastErrorStrA());
+					"Service: %ld: %s\n", GetLastError(), LastErrorStrA().c_str());
 				}
 				return 0;
 			}
