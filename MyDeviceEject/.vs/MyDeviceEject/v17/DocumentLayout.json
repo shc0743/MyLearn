@@ -18,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -38,6 +38,19 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MyDeviceEject.cpp",
+              "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyDeviceEject\\MyDeviceEject\\MyDeviceEject.cpp",
+              "RelativeDocumentMoniker": "MyDeviceEject\\MyDeviceEject.cpp",
+              "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyDeviceEject\\MyDeviceEject\\MyDeviceEject.cpp",
+              "RelativeToolTip": "MyDeviceEject\\MyDeviceEject.cpp",
+              "ViewState": "AQIAAD0BAAAAAAAAAAAiwFABAAAzAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-12-15T03:35:25.623Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 1,
               "Title": "TrustCheck.cpp",
               "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyDeviceEject\\MyDeviceEject\\TrustCheck.cpp",
@@ -46,21 +59,7 @@
               "RelativeToolTip": "MyDeviceEject\\TrustCheck.cpp",
               "ViewState": "AQIAAHcAAAAAAAAAAAAiwIYAAAABAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-01-01T05:57:05.52Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "MyDeviceEject.cpp",
-              "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyDeviceEject\\MyDeviceEject\\MyDeviceEject.cpp",
-              "RelativeDocumentMoniker": "MyDeviceEject\\MyDeviceEject.cpp",
-              "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyDeviceEject\\MyDeviceEject\\MyDeviceEject.cpp",
-              "RelativeToolTip": "MyDeviceEject\\MyDeviceEject.cpp",
-              "ViewState": "AQIAAHoAAAAAAAAAAAAiwIIAAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-12-15T03:35:25.623Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-01-01T05:57:05.52Z"
             },
             {
               "$type": "Bookmark",

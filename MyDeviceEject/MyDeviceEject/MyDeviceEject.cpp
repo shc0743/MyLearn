@@ -317,7 +317,7 @@ int main()
 	SetMprgWizardText(hWiz, L"正在执行...");
 	wizdata->value = 35;
 	UpdateMprgWizard(hWiz);
-	Sleep(50);
+	Sleep(10);
 	if (!SetDiskDriveConnectionStatus(devnum, false)) {
 		DWORD err = GetLastError();
 		SetMprgWizardText(hWiz, (L"发生错误。" + to_wstring(err) + L": " + ErrorCodeToString(err) + L" - Failed to set disk drive connection status").c_str());
@@ -328,7 +328,7 @@ int main()
 	else SetMprgWizardText(hWiz, (L"磁盘 " + to_wstring(devnum) + L" 已脱机。").c_str());
 	wizdata->value = 45;
 	UpdateMprgWizard(hWiz);
-	Sleep(100);
+	Sleep(800);
 
 	wizdata->value = 50;
 	UpdateMprgWizard(hWiz);
@@ -350,7 +350,7 @@ int main()
 	UpdateMprgWizard(hWiz);
 	SetMprgWizardText(hWiz, (L"尝试弹出磁盘 " + to_wstring(devnum) + L"... (1st attempts)").c_str());
 	if (EjectDevice(devnum)) goto directejectsuccess;
-	Sleep(50);
+	Sleep(150);
 	wizdata->value = 80;
 	UpdateMprgWizard(hWiz);
 	SetMprgWizardText(hWiz, (L"尝试弹出磁盘 " + to_wstring(devnum) + L"... (2nd attempts)").c_str());
