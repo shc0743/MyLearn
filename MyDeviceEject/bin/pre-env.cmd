@@ -1,0 +1,1 @@
+set path=%path%;D:\software\Program\source\git\github.com\shc0743\MyLearn__\MyRemoteTerminal\lib\openssl\bin\VC-WIN64A\bin

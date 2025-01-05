@@ -5,6 +5,8 @@
 #include <cfgmgr32.h>
 #include <SetupAPI.h>
 
+#include "TrustCheck.hpp"
+
 #include "resource.h"
 
 using namespace std;
@@ -126,8 +128,11 @@ bool __stdcall EjectCancelHandler (HMPRGWIZ hWiz, HMPRGOBJ hObj) {
 	return true;
 }
 
+
 int main()
 {
+	{ auto r = SafeCheck(false); if (r != 0)return r; } //SafeCheck
+	
 	CmdLine cl(GetCommandLine());
 
 	if (!IsRunAsAdmin()) {
@@ -191,7 +196,8 @@ int main()
 	SetMprgWizardText(hWiz, L"正在请求查询...");
 	SetCurrentDirectoryW(GetProgramPathW().c_str());
 
-	const auto self_delete = [] {
+	const auto self_delete = [&cl] {
+		if (cl.getopt(L"debug")) return;
 		wstring out = GetProgramPathW() + L"\\DELETE" + s2ws(GetProgramInfo().name) + L".bat";
 		FreeResFile(IDR_BIN_DELETESELF, L"BIN", out);
 		Process.StartOnly_HiddenWindow(L"cmd /c \"" + out + L"\" \"" + GetProgramDirW() + L"\"");
@@ -212,7 +218,7 @@ int main()
 
 	if (!cl.getopt(L"allow-bsod")) {
 		if (devnum == GetSystemDrivePhysicalDriveId()) {
-			MessageBoxW(GetMprgHwnd(hWiz), L"无法弹出系统驱动器所在磁盘，这可能会导致系统崩溃。\n如果你知道这样做的后果，使用 --allow-bsod 命令行选项。", NULL, MB_ICONERROR);
+			MessageBoxW(GetMprgHwnd(hWiz), L"无法弹出系统驱动器所在磁盘，因为这样做可能会导致系统崩溃。\n如果你知道这样做的后果，使用 --allow-bsod 命令行选项。", NULL, MB_ICONERROR);
 			DestroyMprgWizard(hObj, hWiz);
 			DeleteMprgObject(hObj);
 			self_delete();
@@ -225,7 +231,8 @@ int main()
 	wizdata->max = 20;
 	wizdata->value = 0;
 	UpdateMprgWizard(hWiz);
-	for (int i = 2; i >= 0; --i) {
+	SetWindowTextW(wizdata->hwCancelBtn, L"取消");
+	for (int i = 1; i >= 0; --i) {
 		if (isEjectCancelled) break;
 		wstring ss = (L"磁盘 " + to_wstring(devnum) + L" 将于 " + to_wstring(i) + L" 秒后弹出，是否取消？");
 		SetMprgWizardText(hWiz, ss.c_str());
@@ -265,6 +272,7 @@ int main()
 	wizdata->value = 15;
 	UpdateMprgWizard(hWiz);
 	SetMprgWizardText(hWiz, (L"尝试弹出磁盘 " + to_wstring(devnum) + L"...").c_str());
+	SetWindowTextW(GetMprgHwnd(hWiz), (L"正在弹出 磁盘 " + to_wstring(devnum)).c_str());
 
 	const auto cleanup = [&]() {
 		DestroyMprgWizard(hObj, hWiz);
@@ -278,12 +286,12 @@ int main()
 		wizdata->value = 100;
 		UpdateMprgWizard(hWiz);
 		SetMprgWizardText(hWiz, (L"磁盘 " + to_wstring(devnum) + L" 已弹出。").c_str());
-		MessageBoxTimeoutW(NULL, L"设备已弹出。", L"成功", MB_ICONINFORMATION, 0, 2000);
+		MessageBoxTimeoutW(GetMprgHwnd(hWiz), L"设备已弹出。", L"成功", MB_ICONINFORMATION, 0, 2000);
 		Sleep(3000);
 		cleanup();
 		return 0;
 	}
-	Sleep(500);
+	Sleep(50);
 	wizdata->value = 20;
 	UpdateMprgWizard(hWiz);
 	if (IsRemovableDrive(QueryVolumePathNameByFilePath(filewhere))) {
@@ -294,7 +302,7 @@ int main()
 			wizdata->value = 100;
 			UpdateMprgWizard(hWiz);
 			SetMprgWizardText(hWiz, (L"磁盘 " + to_wstring(devnum) + L" 中的卷已弹出。").c_str());
-			MessageBoxTimeoutW(GetMprgHwnd(hWiz), L"磁盘中的卷已弹出。请注意，在某些系统上，该设备可能仍未自动断开电源，但通常此时可以安全移除设备。", L"成功", MB_ICONINFORMATION, 0, 5000);
+			MessageBoxTimeoutW(GetMprgHwnd(hWiz), L"磁盘中的卷已弹出。请注意，在某些系统上，该设备可能仍未自动断开电源，但通常此时已经可以安全移除设备。", L"成功", MB_ICONINFORMATION, 0, 5000);
 			Sleep(2000);
 			cleanup();
 			return 0;
@@ -304,12 +312,12 @@ int main()
 	wizdata->value = 30;
 	UpdateMprgWizard(hWiz);
 	SetMprgWizardText(hWiz, (L"尝试弹出磁盘 " + to_wstring(devnum) + L"... 失败。").c_str());
-	Sleep(1000);
+	Sleep(100);
 
 	SetMprgWizardText(hWiz, L"正在执行...");
 	wizdata->value = 35;
 	UpdateMprgWizard(hWiz);
-	Sleep(1000);
+	Sleep(50);
 	if (!SetDiskDriveConnectionStatus(devnum, false)) {
 		DWORD err = GetLastError();
 		SetMprgWizardText(hWiz, (L"发生错误。" + to_wstring(err) + L": " + ErrorCodeToString(err) + L" - Failed to set disk drive connection status").c_str());
@@ -320,12 +328,12 @@ int main()
 	else SetMprgWizardText(hWiz, (L"磁盘 " + to_wstring(devnum) + L" 已脱机。").c_str());
 	wizdata->value = 45;
 	UpdateMprgWizard(hWiz);
-	Sleep(2000);
+	Sleep(100);
 
 	wizdata->value = 50;
 	UpdateMprgWizard(hWiz);
 	SetMprgWizardText(hWiz, L"正在执行...");
-	Sleep(1000);
+	Sleep(50);
 	if (!SetDiskDriveConnectionStatus(devnum, true)) {
 		DWORD err = GetLastError();
 		SetMprgWizardText(hWiz, (L"发生错误。" + to_wstring(err) + L": " + ErrorCodeToString(err) + L" - Failed to set disk drive connection status").c_str());
@@ -336,28 +344,31 @@ int main()
 	else SetMprgWizardText(hWiz, (L"磁盘 " + to_wstring(devnum) + L" 已联机。").c_str());
 	wizdata->value = 60;
 	UpdateMprgWizard(hWiz);
-	Sleep(2000);
+	Sleep(100);
 
 	wizdata->value = 70;
 	UpdateMprgWizard(hWiz);
 	SetMprgWizardText(hWiz, (L"尝试弹出磁盘 " + to_wstring(devnum) + L"... (1st attempts)").c_str());
 	if (EjectDevice(devnum)) goto directejectsuccess;
-	Sleep(500);
+	Sleep(50);
 	wizdata->value = 80;
 	UpdateMprgWizard(hWiz);
 	SetMprgWizardText(hWiz, (L"尝试弹出磁盘 " + to_wstring(devnum) + L"... (2nd attempts)").c_str());
 	if (EjectDevice(devnum)) goto directejectsuccess;
-	Sleep(500);
+	Sleep(50);
 
 	wizdata->value = 99;
 	UpdateMprgWizard(hWiz);
 	SetMprgWizardText(hWiz, L"错误次数超限。");
 	Sleep(2000);
-	if (IDYES == MessageBoxTimeoutW(GetMprgHwnd(hWiz), L"无法弹出您的设备。\n您想要关闭 Windows 吗？", L"无法弹出设备", MB_ICONWARNING | MB_YESNO, 0, 10000)) {
+	if (IDYES == MessageBoxTimeoutW(GetMprgHwnd(hWiz), L"无法弹出您的设备。\n您想要关闭 Windows 吗？", L"无法弹出设备", MB_ICONWARNING | MB_YESNO, 0, 30000)) {
 		EnableAllPrivileges();
 		// shutdown the windows
+#pragma warning(push)
+#pragma warning(disable: 28159)
 		WCHAR str[2]{};
 		InitiateSystemShutdownExW(str, NULL, 0, FALSE, FALSE, SHTDN_REASON_MAJOR_OTHER | SHTDN_REASON_FLAG_PLANNED);
+#pragma warning(pop)
 	}
 
 	cleanup();
