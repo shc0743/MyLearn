@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>获取下载链接</title>
+    <script>console.clear = () => console.log('由于要“保留日志”，系统已阻止 console.clear() 发挥作用')</script>
+    <!--1.在引入阿里云验证码JS脚本的位置之前，或者在html的head标签最前的位置添加一个script脚本，里面保存一个含有region和prefix参数的全局变量AliyunCaptchaConfig即可-->
+    <script src="config.js"></script>
+    <!--2.集成主JS-->
+    <script type="text/javascript" src="https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js"></script>
+    <style>a{color:blue;text-decoration:none;}a:hover{text-decoration: underline;}</style>
+    <link rel="stylesheet" href="./element-plus.css">
+</head>
+<body>
+
+    <div id="container">
+        <main>
+            <h1 style="margin-top: 0; text-align: center;">获取下载链接</h1>
+
+            <p id="tip" style="margin-top: 0;">请完成验证码以获取下载链接。</p>
+
+            <button id="button" class="el-button el-button--primary is-plain">获取链接</button>
+
+            <div id="downloadui" hidden>
+                <div>链接有效期: <span id="downloadtime"></span></div>
+
+                <div style="margin-top: 0.5em;">
+                    <span style="margin-right: 0.5em;">下载链接:</span>
+                    <a id="downloadlink" download></a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!--3.新建一个<script>标签，用于调用验证码初始化函数initAliyunCaptcha-->
+    <script type="module" src="./main.js"></script>
+
+    <style>
+    #downloadlink {
+        word-break: break-all;
+    }
+    #downloadtime {
+        font-weight: bold;
+        color: red;
+    }
+
+    #container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        left: 0; right: 0; top: 0; bottom: 0;
+        z-index: 1;
+    }
+    main {
+        display: flex;
+        flex-direction: column;
+        padding: 1em;
+        border: 1px solid var(--el-color-primary-light-8);
+        border-radius: 5px;
+        background-color: #ffffff;
+        box-shadow: 0 0 10px 5px var(--el-color-primary-light-8);
+        width: 400px;
+        /* height: 300px; */
+        overflow: auto;
+        box-sizing: border-box;
+    }
+    </style>
+    
+</body>
+</html>
