@@ -34,6 +34,7 @@ void ConsoleOutput(const wchar_t *message)
 // 通用文件对话框封装
 bool GetFilePath(bool openDialog, wchar_t *buffer, const wchar_t *title)
 {
+    wcscpy_s(buffer, MAX_PATH, L".选择此文件夹._");
     OPENFILENAMEW ofn = {0};
     ofn.lStructSize = sizeof(ofn);
     ofn.lpstrFile = buffer;
@@ -43,7 +44,14 @@ bool GetFilePath(bool openDialog, wchar_t *buffer, const wchar_t *title)
     ofn.nFilterIndex = 1;
     ofn.lpstrFilter = L"All Files\0*.*\0";
     ofn.lpstrDefExt = L"";
-    return openDialog ? GetOpenFileNameW(&ofn) : GetSaveFileNameW(&ofn);
+    bool r = openDialog ? GetOpenFileNameW(&ofn) : GetSaveFileNameW(&ofn);
+    wstring path = buffer;
+    // MessageBoxW(NULL, path.c_str(), L"[DEBUG] Path", MB_OK);
+    if (path.ends_with(L"\\.选择此文件夹._")) {
+        path = path.substr(0, ofn.nFileOffset);
+        wcscpy_s(buffer, MAX_PATH, path.c_str());
+    }
+    return r;
 }
 
 // 显示任务对话框
@@ -119,6 +127,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdSh
         wcscpy_s(sourcePath, argv[1]);
         wcscpy_s(targetPath, argv[2]);
     }
+    else if (argc == 4)
+    {
+        wcscpy_s(sourcePath, argv[1]);
+        wcscpy_s(targetPath, argv[2]);
+        if (wcscmp(argv[3], L"/gui") == 0)
+        {
+            consoleMode = false;
+        }
+    }
     else
     {
         if (consoleMode)
@@ -132,6 +149,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdSh
     DWORD srcAttrib = GetFileAttributesW(sourcePath);
     if (srcAttrib == INVALID_FILE_ATTRIBUTES)
         srcAttrib = 0;
+
+    // 确认目标文件不存在
+    if (GetFileAttributesW(targetPath) != INVALID_FILE_ATTRIBUTES)
+    {
+        if (consoleMode)
+            ConsoleOutput(L"错误：目标文件已存在");
+        else
+            ShowResultDialog(false, L"目标文件已存在");
+        return 87; // ERROR_INVALID_PARAMETER
+    }
         
     // 创建符号链接
     DWORD flags = (srcAttrib & FILE_ATTRIBUTE_DIRECTORY) ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0;
@@ -149,7 +176,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int nCmdSh
     else
     {
         if (!IsRunAsAdmin()) {
-            wstring cl = (L"\""s + sourcePath + L"\" \"" + targetPath + L"\"");
+            wstring cl = (L"\""s + sourcePath + L"\" \"" + targetPath + L"\" ");
+            if (!consoleMode)
+                cl += L"/gui";
             SHELLEXECUTEINFOW sei = {sizeof(sei)};
             sei.lpFile = argv[0];
             sei.lpParameters = cl.c_str();

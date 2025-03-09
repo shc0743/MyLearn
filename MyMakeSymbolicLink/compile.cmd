@@ -2,11 +2,11 @@
 where cl >nul
 if %errorlevel% neq 0 (
     REM Call the Visual Studio Developer Command Prompt
-    call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat"
+    call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat"  -startdir=none -arch=x64 -host_arch=x64
+    if %errorlevel% neq 0 (
+        call D:\software\VisualStudio\ms\versions\2022\Community\Common7\Tools\VsDevCmd.bat  -startdir=none -arch=x64 -host_arch=x64
+    )
 )
-cl.exe SymLinkCreator.cpp /EHsc /D_UNICODE /DUNICODE /link /SUBSYSTEM:WINDOWS /MANIFEST:EMBED
-@REM cl.exe /nologo /W4 /EHsc /D_UNICODE /DUNICODE /D_CRT_SECURE_NO_WARNINGS ^
-@REM /FoSymLinkCreator.obj SymLinkCreator.cpp ^
-@REM /link /OUT:SymLinkCreator.exe /SUBSYSTEM:WINDOWS /MANIFEST:embed ^
-@REM comctl32.lib comdlg32.lib shell32.lib ole32.lib user32.lib
+cl.exe SymLinkCreator.cpp /EHsc /MT /D_UNICODE /DUNICODE /std:c++20 /link /SUBSYSTEM:WINDOWS /MANIFEST:EMBED /MACHINE:X64
+cmd /c C:\Users\shc07\OneDrive\self_cert\sign_auto.cmd %~dp0\SymLinkCreator.exe
 timeout 3
