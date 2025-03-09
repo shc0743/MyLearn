@@ -18,16 +18,17 @@
         <main>
             <h1 style="margin-top: 0; text-align: center;">获取下载链接</h1>
 
-            <p id="tip" style="margin-top: 0;">请完成验证码以获取下载链接。</p>
+            <p id="tip" style="margin-top: 0;">完成验证以获取下载链接。</p>
 
-            <button id="button" class="el-button el-button--primary is-plain">获取链接</button>
+            <button hidden id="button" class="el-button el-button--primary is-plain is-disabled">我不是机器人</button>
+            <div id="loading_placeholder">正在加载，请稍候...</div>
 
             <div id="downloadui" hidden>
                 <div>链接有效期: <span id="downloadtime"></span></div>
 
                 <div style="margin-top: 0.5em;">
                     <span style="margin-right: 0.5em;">下载链接:</span>
-                    <a id="downloadlink" download></a>
+                    <a id="downloadlink" download target=_blank></a>
                 </div>
             </div>
         </main>
@@ -63,9 +64,11 @@
         background-color: #ffffff;
         box-shadow: 0 0 10px 5px var(--el-color-primary-light-8);
         width: 400px;
+        max-width: calc(100vw - 1em);
         /* height: 300px; */
         overflow: auto;
         box-sizing: border-box;
+        margin: 0.5em;
     }
     </style>
     
