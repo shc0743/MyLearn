@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Get Download Link</title>
-    <!--1.在引入阿里云验证码JS脚本的位置之前，或者在html的head标签最前的位置添加一个script脚本，里面保存一个含有region和prefix参数的全局变量AliyunCaptchaConfig即可-->
-    <script src="config.js?v=2"></script>
-    <script>window.v = 202503110037</script>
+    <script>window.v = 2503151843</script>
     <style>a{color:blue;text-decoration:none;}a:hover{text-decoration: underline;}</style>
     <link rel="stylesheet" href="./element-plus.css?v=250309">
 </head>
@@ -30,11 +28,20 @@
                 </div>
             </div>
         </main>
-        
-        <button id=captcha_button hidden></button>
+    </div>
+
+    <div class="backdrop" id="captchaui_backdrop" hidden>&NoBreak;</div>
+    <div id="captchaui" hidden>
+        <div data-i18n="loadingpleasewait"></div>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAABA47V5ZzBUbHqsC" data-callback="captchaVerifyCallback"></div>
+        <!-- <div style="margin-top: 0.5em;"><button class="el-button el-button--primary is-plain" data-i18n="continue"></button></div> -->
     </div>
 
     <style>
+        *[hidden] {
+            display: none !important;
+        }
+
     #downloadlink {
         word-break: break-all;
     }
@@ -67,11 +74,35 @@
         box-sizing: border-box;
         margin: 0.5em;
     }
+    #captchaui {
+        /* 一个浮动的div，用于显示验证码 */
+        position: fixed;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 300px;
+        max-width: calc(100vw - 1em);
+        margin: auto;
+        padding: 1em;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #fff;
+        box-shadow: 0 0 10px 5px #ccc;
+        /* 居中 */
+        left: 50%; top: 50%;
+        transform: translate(-50%, -50%);
+    }
+    #captchaui_backdrop {
+        position: fixed;
+        left: 0; right: 0; top: 0; bottom: 0;
+        z-index: 1;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
     </style>
     
-    <!--2.集成主JS-->
-    <div id=aliyun_captcha_js hidden></div>
-    <!--3.新建一个<script>标签，用于调用验证码初始化函数initAliyunCaptcha-->
+    <div id=_captcha_js hidden></div>
     <script>document.write(`<script type="module" src="./main.js?v=${v}"><${''}/script>`)</script>
 
 </body>

@@ -23,14 +23,6 @@ let locale = url.searchParams.get('locale') || 'en';
     if (type !== "link" && type !== "content") throw i18n.unknown_type;
     
 })()
-.then(() => new Promise(async (resolve, reject) => {
-    if (locale === 'zh') locale = 'cn'; // for compalibility to AliyunCaptcha
-    const s = document.createElement("script");
-    s.src = 'https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js';
-    s.onload = resolve;
-    s.onerror = reject;
-    aliyun_captcha_js.replaceWith(s);
-}))
 .then(() => {
     return main();
 })
@@ -59,62 +51,59 @@ function isValidUrl(url) {
 }
 
 async function main() {
-    // 弹出式，除region和prefix以外的参数
-    window.initAliyunCaptcha({
-        // 场景ID。根据步骤二新建验证场景后，您可以在验证码场景列表，获取该场景的场景ID
-        SceneId: '1p7enydb',
-        // 验证码模式。popup表示要集成的验证码模式为弹出式。无需修改
-        mode: 'popup',
-        // 触发验证码弹窗的元素。button表示单击登录按钮后，触发captchaVerifyCallback函数。您可以根据实际使用的元素修改element的值
-        button: '#captcha_button',
-        // 业务请求(带验证码校验)回调函数，无需修改
-        captchaVerifyCallback: p => captchaVerifyCallback(p).catch(error=>({captchaResult:false,bizResult:false})),
-        // 业务请求结果回调函数，无需修改
-        onBizResultCallback: onBizResultCallback,
-        // 绑定验证码实例函数，无需修改
-        getInstance: getInstance,
-        // 验证码语言类型，支持简体中文（cn）、繁体中文（tw）、英文（en）
-        language: locale,
-    });
-    function getInstance(instance) {
-        captcha = instance
-        finish()
-    }
-            
-    button.onclick = function () {
-        captcha_button.click()
-        //captcha_button.click()
+    finish();
+    
+    button.onclick = async function () {
+        captchaui.hidden = false; captchaui_backdrop.hidden = false;
+        await new Promise(async (resolve, reject) => {
+            const s = document.createElement("script");
+            s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+            s.onload = resolve;
+            s.onerror = reject;
+            _captcha_js.replaceWith(s);
+        });
+        captchaui.firstElementChild.remove();
     }
     
     let dlink = '', dvalid = 0;
     
     async function captchaVerifyCallback(captchaVerifyParam) {
         // console.log(captchaVerifyParam);
-    
-        // 1.向后端发起业务请求，获取验证码验证结果和业务结果
-        const result = await (await fetch('https://alicaptchacheckv1.421013.xyz/', {
-            method: 'POST',
-            body: JSON.stringify({
-                captcha: captchaVerifyParam,
-                url: object,
-                bucket: bucket,
-                region: region,
-            }),
-        })).json();
-    
-        // 2.构造标准返回参数
-        const verifyResult = {
-            // 验证码验证是否通过，boolean类型，必选。
-            captchaResult: result.captcha,
-            // 业务验证是否通过，boolean类型，可选；若为无业务验证结果的场景，bizResult可以为空。
-            bizResult: result.captcha,
-        };
-        if (result.captcha) {
-            dlink = result.link;
-            dvalid = result.expiration;
+        try {
+        
+            // 1.向后端发起业务请求，获取验证码验证结果和业务结果
+            const result = await (await fetch('https://cfcaptchacheckv1.421013.xyz/', {
+                method: 'POST',
+                body: JSON.stringify({
+                    captcha: captchaVerifyParam,
+                    url: object,
+                    bucket: bucket,
+                    region: region,
+                }),
+            })).json();
+        
+            // 2.构造标准返回参数
+            const verifyResult = {
+                // 验证码验证是否通过，boolean类型，必选。
+                captchaResult: result.captcha,
+                // 业务验证是否通过，boolean类型，可选；若为无业务验证结果的场景，bizResult可以为空。
+                bizResult: result.captcha,
+            };
+            if (result.captcha) {
+                dlink = result.link;
+                dvalid = result.expiration;
+            }
+            if (result.captcha) {
+                queueMicrotask(() => onBizResultCallback(result.captcha));
+            }
+            return verifyResult;
         }
-        return verifyResult;
+        catch (error) {
+            console.error(error);
+            alert('内部错误: ' + error);
+        }
     }
+    globalThis.captchaVerifyCallback = captchaVerifyCallback;
     
     // 业务请求验证结果回调函数
     function onBizResultCallback(bizResult) {
@@ -122,6 +111,8 @@ async function main() {
             return alert('业务验证不通过！');
         }
         button.remove();
+        captchaui.remove();
+        captchaui_backdrop.remove();
         
         if (type === 'content') return queueMicrotask(async () => {
             tip.innerText = i18n.fetching_content;

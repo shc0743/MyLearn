@@ -1,0 +1,18 @@
+{
+    "title": "Get Download Link",
+    "text": "Please complete the captcha to get the download link.",
+    "imnotrobot": "I'm not a robot",
+    "loadingpleasewait": "Loading, please wait...",
+    "link_is_valid_for": "Link is valid for:",
+    "linktip": "Download link:",
+    "nolink": "No link specified.",
+    "link_not_supported": "This link is not supported.",
+    "unknown_type": "The specified type is unidentified.",
+    "loadfail": "Failed to load: ",
+    "expired": "Link has expired. Click to reload",
+    "cant_get_link": "Couldn't get download link: ",
+    "link_content_invalid": "The content of the link is not valid.",
+    "timeout": "The request was timeout.",
+    "continue": "Continue",
+    "fetching_content": "Fetching content..."
+}
