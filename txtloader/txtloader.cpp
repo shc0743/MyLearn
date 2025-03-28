@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
                 printf("Error: Failed to convert argument to wide char\n");
                 return -1;
             }
-            if (argc != 2) wcscat_s(cmdLine, L" ");
+            if (i != 2) wcscat_s(cmdLine, L" ");
             if (wcschr(argWide, L' ') != NULL || wcschr(argWide, L'\t') != NULL) {
                 wcscat_s(cmdLine, L"\"");
                 wcscat_s(cmdLine, argWide);
