@@ -24,18 +24,25 @@ int main(int argc, char *argv[]) {
     }
 
     // 构建命令行参数（格式："exe_path arg1 arg2..."）
-    wchar_t cmdLine[MAX_PATH * 2] = {0};
+    wchar_t cmdLine[32768] {};
     // wcscpy_s(cmdLine, MAX_PATH * 2, L"app");
 
     if (argc > 2) {
         for (int i = 2; i < argc; i++) {
-            wchar_t argWide[MAX_PATH];
-            if (MultiByteToWideChar(CP_UTF8, 0, argv[i], -1, argWide, MAX_PATH) == 0) {
+            wchar_t argWide[32768]{};
+            if (MultiByteToWideChar(CP_UTF8, 0, argv[i], -1, argWide, 32768) == 0)
+            {
                 printf("Error: Failed to convert argument to wide char\n");
                 return -1;
             }
-            wcscat_s(cmdLine, MAX_PATH * 2, L" ");
-            wcscat_s(cmdLine, MAX_PATH * 2, argWide);
+            if (argc != 2) wcscat_s(cmdLine, L" ");
+            if (wcschr(argWide, L' ') != NULL || wcschr(argWide, L'\t') != NULL) {
+                wcscat_s(cmdLine, L"\"");
+                wcscat_s(cmdLine, argWide);
+                wcscat_s(cmdLine, L"\"");
+            } else {
+                wcscat_s(cmdLine, argWide);
+            }
         }
     }
 
