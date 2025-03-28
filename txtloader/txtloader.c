@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 
     // 构建命令行参数（格式："exe_path arg1 arg2..."）
     wchar_t cmdLine[MAX_PATH * 2] = {0};
-    wcscpy_s(cmdLine, MAX_PATH * 2, L"app");
+    // wcscpy_s(cmdLine, MAX_PATH * 2, L"app");
 
     if (argc > 2) {
         for (int i = 2; i < argc; i++) {
