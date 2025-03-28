@@ -1,0 +1,114 @@
+#include <windows.h>
+#include <tchar.h>
+#include <stdio.h>
+
+#pragma comment(linker, "/subsystem:windows /entry:mainCRTStartup")
+
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        printf("Usage: %s <file> [arguments...]\n", argv[0]);
+        return 87;
+    }
+
+    // 转换为宽字符路径（Windows API 推荐使用宽字符）
+    wchar_t exePath[MAX_PATH];
+    if (MultiByteToWideChar(CP_UTF8, 0, argv[1], -1, exePath, MAX_PATH) == 0) {
+        printf("Error: Failed to convert path to wide char\n");
+        return -1;
+    }
+
+    // 检查文件是否存在
+    if (GetFileAttributesW(exePath) == INVALID_FILE_ATTRIBUTES) {
+        printf("Error: File '%ls' does not exist or cannot be accessed\n", exePath);
+        return -1;
+    }
+
+    // 构建命令行参数（格式："exe_path arg1 arg2..."）
+    wchar_t cmdLine[MAX_PATH * 2] = {0};
+    wcscpy_s(cmdLine, MAX_PATH * 2, L"app");
+
+    if (argc > 2) {
+        for (int i = 2; i < argc; i++) {
+            wchar_t argWide[MAX_PATH];
+            if (MultiByteToWideChar(CP_UTF8, 0, argv[i], -1, argWide, MAX_PATH) == 0) {
+                printf("Error: Failed to convert argument to wide char\n");
+                return -1;
+            }
+            wcscat_s(cmdLine, MAX_PATH * 2, L" ");
+            wcscat_s(cmdLine, MAX_PATH * 2, argWide);
+        }
+    }
+
+    // 创建 Job 对象（用于强制终止子进程）
+    HANDLE hJob = CreateJobObjectW(NULL, NULL);
+    if (hJob == NULL) {
+        printf("Error: Failed to create job object (Error Code: %lu)\n", GetLastError());
+        return -1;
+    }
+
+    // 设置 Job 对象属性：Loader 退出时强制终止子进程
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobInfo = {0};
+    jobInfo.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+    if (!SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &jobInfo, sizeof(jobInfo))) {
+        printf("Error: Failed to set job object limits (Error Code: %lu)\n", GetLastError());
+        CloseHandle(hJob);
+        return -1;
+    }
+
+    // 初始化 STARTUPINFO 和 PROCESS_INFORMATION
+    STARTUPINFOW si = { sizeof(si) };
+    PROCESS_INFORMATION pi = { 0 };
+
+    // 使用 CreateProcessW 直接运行文件（无视扩展名）
+    BOOL success = CreateProcessW(
+        exePath,        // 可执行文件路径（即使扩展名是 .txt 也能运行）
+        cmdLine,       // 完整的命令行（含参数）
+        NULL,          // 进程安全属性
+        NULL,          // 线程安全属性
+        FALSE,         // 不继承句柄
+        CREATE_SUSPENDED,  // 先挂起进程，以便关联 Job 对象
+        NULL,          // 使用父进程环境变量
+        NULL,          // 使用父进程当前目录
+        &si,           // STARTUPINFO
+        &pi            // PROCESS_INFORMATION
+    );
+
+    if (!success) {
+        printf("Error: Failed to execute file (Error Code: %lu)\n", GetLastError());
+        CloseHandle(hJob);
+        return -1;
+    }
+
+    // 将子进程关联到 Job 对象
+    if (!AssignProcessToJobObject(hJob, pi.hProcess)) {
+        printf("Error: Failed to assign process to job object (Error Code: %lu)\n", GetLastError());
+        TerminateProcess(pi.hProcess, 1);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        CloseHandle(hJob);
+        return -1;
+    }
+
+    // 恢复子进程运行（之前是 CREATE_SUSPENDED）
+    ResumeThread(pi.hThread);
+
+    printf("Successfully launched: %ls\n", cmdLine);
+    printf("Child process PID: %lu\n", pi.dwProcessId);
+
+    // 等待子进程退出
+    printf("Waiting for child process to exit...\n");
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    // 获取子进程退出码
+    DWORD exitCode;
+    GetExitCodeProcess(pi.hProcess, &exitCode);
+    // printf("Child process exited with code: %lu\n", exitCode);
+
+    // 关闭句柄（防止泄漏）
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    CloseHandle(hJob);
+
+    return exitCode;
+}
