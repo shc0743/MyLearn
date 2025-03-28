@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
         TaskDialog(NULL, NULL, L"Error: Invalid Parameter", L"Error: Invalid Parameter", 
             L"Usage: [loader|:s] <file> [arguments...]\n\nIf argv[0] is :s, then all "
             "TaskDialog will be blocked. Use the following syntax to do it:\n"
-            "txtloader txtloader :s", TDCBF_CANCEL_BUTTON, TD_ERROR_ICON, NULL);
+            "loader.exe loader.exe :s", TDCBF_CANCEL_BUTTON, TD_ERROR_ICON, NULL);
         return ERROR_INVALID_PARAMETER;
     }
 
