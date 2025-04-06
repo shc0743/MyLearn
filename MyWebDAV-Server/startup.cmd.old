@@ -1,0 +1,16 @@
+@echo off
+cd /d "%~dp0"
+
+rem if exist U:\WebDAV
+ goto webdav_main
+
+set tmpf="%~dp0mount%random%.tmp"
+echo select vdisk file="%~dp0entrance.vhdx" > %tmpf%
+echo attach vdisk >> %tmpf%
+diskpart /s %tmpf%
+del /f /s /q %tmpf% >nul
+
+:webdav_main
+rem cd /d U:\WebDAV
+echo [webdav] Started at %date% %time%
+"%~dp0webdav" --config "%~dp0config.yaml" > \\.\pipe\WebDAV-Server-Logging-Entrance 2>&1
