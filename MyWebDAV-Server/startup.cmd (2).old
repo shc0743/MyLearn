@@ -1,0 +1,6 @@
+@echo off
+cd /d "%~dp0"
+
+:webdav_main
+echo [webdav] Started at %date% %time%
+"%~dp0webdav" --config "%~dp0config.yaml" > \\.\pipe\WebDAV-Server-Logging-Entrance 2>&1
