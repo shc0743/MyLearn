@@ -18,7 +18,7 @@ def get_ethernet_ipv6():
     
     # 提取第二个有效地址（假设顺序与ipconfig一致）
     if len(ipv6_addresses) >= 2:
-        return ipv6_addresses[1]
+        return ipv6_addresses[0] if "::" in ipv6_addresses[1] else ipv6_addresses[1]
     elif len(ipv6_addresses) == 1:
         return ipv6_addresses[0]
     return None

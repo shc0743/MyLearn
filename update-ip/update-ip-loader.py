@@ -54,14 +54,19 @@ def update_logic():
     # 例如，调用 update_cloudflare 函数来更新 DNS 记录
     log('', 0x17, servicemanager.EVENTLOG_INFORMATION_TYPE)
     # 打开一个子进程，记录输出到 变量
-    command = 'python.exe "' + __file__ + '/../update-ip.py"'
+    command = ['python', __file__ + '/../update-ip.py']
     try:
-        result = subprocess.run(command, shell=False, text=True, capture_output=True)
-        log(f"{result.stdout}", 1000, servicemanager.EVENTLOG_INFORMATION_TYPE)
-        if result.returncode != 0:
-            log(f"[Exit code={result.returncode}] Error: {result.stderr}", 0x20, servicemanager.EVENTLOG_ERROR_TYPE)
-        else:
-            log('', 0x18, servicemanager.EVENTLOG_INFORMATION_TYPE)
+        n = 0
+        while n < 3:
+            result = subprocess.run(command, shell=False, text=True, capture_output=True)
+            log(f"{result.stdout}", 1000, servicemanager.EVENTLOG_INFORMATION_TYPE)
+            if result.returncode != 0:
+                n = n + 1
+                log(f"[Exit code={result.returncode}] Error: {result.stderr}{f'\nWe will retry after {n * 15} seconds...' if (n < 3) else ''}", 0x20, servicemanager.EVENTLOG_WARNING_TYPE if (n < 3) else servicemanager.EVENTLOG_ERROR_TYPE)
+                sleep(n * 15)
+            else:
+                log('', 0x18, servicemanager.EVENTLOG_INFORMATION_TYPE)
+                break
     except Exception as e:
         log(f"Error executing subprocess: {e}", 0x3B, servicemanager.EVENTLOG_ERROR_TYPE)
         log('', 0x19, servicemanager.EVENTLOG_ERROR_TYPE)
@@ -78,10 +83,10 @@ class SimpleService(win32serviceutil.ServiceFramework):
         self.is_alive = True
 
     def SvcStop(self):
+        self.is_alive = False
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         log('', 0x38, servicemanager.EVENTLOG_INFORMATION_TYPE)
         win32event.SetEvent(self.hWaitStop)
-        self.is_alive = False
 
     def SvcDoRun(self):
         servicemanager.LogMsg(
@@ -120,6 +125,13 @@ class SimpleService(win32serviceutil.ServiceFramework):
             except BaseException:
                 print("Unable to delete the file. Please delete it manually.")
 
+    def mysleep(self, seconds):
+        """可中断的睡眠函数，每隔1秒检查服务是否应停止"""
+        for _ in range(seconds):
+            if not self.is_alive:  # 检查停止标志
+                return
+            sleep(1)
+
     def main(self):
         previous_ip = ''
         n = 0
@@ -132,17 +144,28 @@ class SimpleService(win32serviceutil.ServiceFramework):
                         log([previous_ip, current_ip], 0x15, servicemanager.EVENTLOG_INFORMATION_TYPE)
                         if current_ip and current_ip != '' and current_ip != None:
                             # 记录日志。0x16,  		"update-ip 任务已规划。预计执行时间：%1\r\n"
-                            log(str(datetime.datetime.now()), 0x16, servicemanager.EVENTLOG_INFORMATION_TYPE)
+                            log(str(datetime.datetime.now() + datetime.timedelta(seconds=3)), 0x16, servicemanager.EVENTLOG_INFORMATION_TYPE)
+                            # 等待3秒
+                            self.mysleep(3)
+                            # 如果再次变化，则进入下一轮
+                            current_ip_2 = get_ethernet_ipv6()
+                            if not current_ip == current_ip_2:
+                                previous_ip = current_ip
+                                continue
                             # 在新的线程中执行更新操作
-                            thread = threading.Thread(target=update_logic)
+                            thread = threading.Thread(target=update_logic, daemon=True)
                             thread.start()
                             thread.join()
                             # 等待更新完成
                             while thread.is_alive():
                                 sleep(1)
+                                if not self.is_alive:
+                                    return
                         # 完成更新
                         previous_ip = current_ip
-                sleep(10)
+                self.mysleep(10)
+                if not self.is_alive:
+                    break
                 if n % (360 * 2) == 0:  # 每2小时显示一次广告（假设每次循环耗时10秒，360次循环为1小时）
                     # 随机显示广告
                     ads = [1013, 1218, 1998, 1999, 2000]
