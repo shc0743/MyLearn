@@ -10,4 +10,4 @@ if %errorlevel% neq 0 (
 cd /d %~dp0
 rc 🐍.rc
 @REM cl /source-charset:utf-8 deepseek_cpp_20250502_ec3cd0.cpp /link /MANIFEST:EMBED
-cl /source-charset:utf-8 🐍.cpp 🐍.res /link /MANIFEST:EMBED
+cl /source-charset:utf-8 /std:c++20 🐍.cpp 🐍.res /link /MANIFEST:EMBED

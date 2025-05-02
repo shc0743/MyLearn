@@ -1,4 +1,4 @@
-// To compile: cl /source-charset:utf-8 deepseek_cpp_20250502_ec3cd0.cpp /link /MANIFEST:EMBED
+// To compile: cl /source-charset:utf-8 /std:c++20 deepseek_cpp_20250502_ec3cd0.cpp /link /MANIFEST:EMBED
 
 #include <windows.h>
 #include <string>
@@ -42,15 +42,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             0,                         // 字体宽度(0表示自动)
             0,                         // 文本倾斜角度
             0,                         // 字体倾斜角度
-            FW_NORMAL,                 // 字体粗细
+            0,                 // 字体粗细
             FALSE,                     // 是否斜体
             FALSE,                     // 是否下划线
             FALSE,                     // 是否删除线
             DEFAULT_CHARSET,           // 字符集
             OUT_OUTLINE_PRECIS,        // 输出精度
             CLIP_DEFAULT_PRECIS,       // 裁剪精度
-            CLEARTYPE_QUALITY,         // 输出质量
-            VARIABLE_PITCH | FF_SWISS, // 间距和字体族
+            ANTIALIASED_QUALITY,         // 输出质量
+            VARIABLE_PITCH | FF_DECORATIVE | FF_MODERN, // 间距和字体族
             L"Segoe UI Emoji"          // 字体名称(支持emoji的字体)
         );
         hFontMs = CreateFontW(
@@ -58,15 +58,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             0,                         // 字体宽度(0表示自动)
             0,                         // 文本倾斜角度
             0,                         // 字体倾斜角度
-            FW_NORMAL,                 // 字体粗细
+            0,                 // 字体粗细
             FALSE,                     // 是否斜体
             FALSE,                     // 是否下划线
             FALSE,                     // 是否删除线
             DEFAULT_CHARSET,           // 字符集
             OUT_OUTLINE_PRECIS,        // 输出精度
             CLIP_DEFAULT_PRECIS,       // 裁剪精度
-            CLEARTYPE_QUALITY,         // 输出质量
-            VARIABLE_PITCH | FF_SWISS, // 间距和字体族
+            ANTIALIASED_QUALITY,         // 输出质量
+            VARIABLE_PITCH | FF_DECORATIVE | FF_MODERN, // 间距和字体族
             L"Microsoft YaHei"         // 字体名称(支持emoji的字体)
         );
         waveAmplitude = GetSystemMetrics(SM_CYSCREEN) / 4;
@@ -141,8 +141,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     break;
     case WM_KEYDOWN:
-    if (wParam == VK_SPACE) {
+    if (wParam == VK_RETURN) {
         logic = (logic == 0) ? 1 : 0;
+    }
+    if (wParam == VK_SPACE) {
+        paused = !paused;
+    }
+    if (wParam == 'M') {
+        // mute
+        PlaySoundW(NULL, NULL, 0);
     }
         break;
     case WM_NCLBUTTONDOWN:
@@ -178,7 +185,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         // 绘制🐍形字符
         std::wstring _u_1f40d_ = L"🐍";
-        TextOutW(hdc, 50, 50, _u_1f40d_.c_str(), (int)_u_1f40d_.length());
+        RECT rc{
+            .left = 50,
+            .top = 50,
+            .right = 100,
+            .bottom = 100,
+        };
+        DrawTextW(hdc, _u_1f40d_.c_str(), (int)_u_1f40d_.length(), &rc, DT_TOP | DT_LEFT | DT_NOCLIP);
 
         // 恢复原来的字体
         SelectObject(hdc, hOldFont);
@@ -189,10 +202,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         SetTextColor(hdc, RGB(0, 0, 0)); // 绿色
 
         // 绘制🐍形字符
-        TextOutW(hdc, 150, 50, _u_1f40d_.c_str(), (int)_u_1f40d_.length());
+        rc.left = 150;
+        rc.right = 200;
+        DrawTextW(hdc, _u_1f40d_.c_str(), (int)_u_1f40d_.length(), &rc, DT_TOP | DT_LEFT | DT_NOCLIP);
 
         // 恢复原来的字体
         SelectObject(hdc, hOldFont);
+
+        TextOutW(hdc, 0, 0, L"Space - Pause | M - Mute | Enter - Switch Mode", 46);
 
         EndPaint(hWnd, &ps);
         break;
