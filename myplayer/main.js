@@ -95,16 +95,23 @@ const createWindow = () => {
         },
     });
 
+    win.webContents.setUserAgent(
+        win.webContents.getUserAgent().replace(/\s*Electron\/[\d.]+\s*/ig, ' ')
+    );
     win.loadURL(url);
     if (!!args.fullscreen) win.fullScreen = true;
 
     if (prevent.includes("close")) win.addListener('close', (event) => {
         event.preventDefault();
     });
-    if (prevent.includes("exitfullscreen")) win.addListener('leave-full-screen', () => {
-        console.log("win: leave full screen");
-        setTimeout(() => win.fullScreen = true);
-    });
+    if (prevent.includes("exitfullscreen")) {
+        // win.addListener('leave-full-screen', () => {
+        //     console.log("win: leave full screen");
+        //     setTimeout(() => win.fullScreen = true);
+        // });
+        win.setKiosk(true);
+        win.setMinimizable(false);
+    }
 
     let firstInstance = true;
     win.webContents.on('did-finish-load', () => {
