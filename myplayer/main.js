@@ -114,6 +114,13 @@ const createWindow = () => {
         if (click) setTimeout(() => runjs(win, `document.querySelector(\`${click}\`).click()`), delay);
         if (execute) setTimeout(() => runjs(win, execute), delay);
     });
+    win.webContents.setWindowOpenHandler((details) => {
+        console.log("win: setWindowOpenHandler");
+        
+        setTimeout(() => win.loadURL(details.url));
+
+        return ({ "action": "deny" });
+    });
 
     return win;
 }
