@@ -77,7 +77,7 @@ const runjs = (win, js) => {
 }
 
 const createWindow = () => {
-    console.log("app: create window");
+    console.log("win: create window");
 
     let width = (+args.width);
     if (Number.isNaN(width)) width = 800;
@@ -102,12 +102,13 @@ const createWindow = () => {
         event.preventDefault();
     });
     if (prevent.includes("exitfullscreen")) win.addListener('leave-full-screen', () => {
-        win.fullScreen = true;
+        console.log("win: leave full screen");
+        setTimeout(() => win.fullScreen = true);
     });
 
     let firstInstance = true;
     win.webContents.on('did-finish-load', () => {
-        console.log("app: did-finish-load");
+        console.log("win: did-finish-load");
         if (!firstInstance && (!args.all)) return;
         firstInstance = false;
         if (click) setTimeout(() => runjs(win, `document.querySelector(\`${click}\`).click()`), delay);

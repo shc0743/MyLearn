@@ -41,5 +41,6 @@ Browse.VC.db
 FileContentIndex
 fileList.bin
 out
+dist
 node_modules
 CopilotIndices
