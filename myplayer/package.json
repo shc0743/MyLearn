@@ -7,7 +7,7 @@
     "test": "electron .",
     "build": "electron-packager . player --out dist --arch=x64 --overwrite"
   },
-  "author": "",
+  "author": "Player's Author",
   "license": "MIT",
   "description": "",
   "devDependencies": {
