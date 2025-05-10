@@ -96,7 +96,7 @@ const createWindow = () => {
     });
 
     win.webContents.setUserAgent(
-        win.webContents.getUserAgent().replace(/\s*Electron\/[\d.]+\s*/ig, ' ')
+        win.webContents.getUserAgent().replace(/\s*Electron\/[\d.]+\s*/ig, ' ').replace('player/1.0.0 ', '')
     );
     win.loadURL(url);
     if (!!args.fullscreen) win.fullScreen = true;
