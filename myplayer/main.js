@@ -105,11 +105,11 @@ const createWindow = () => {
         event.preventDefault();
     });
     if (prevent.includes("exitfullscreen")) {
-        // win.addListener('leave-full-screen', () => {
-        //     console.log("win: leave full screen");
-        //     setTimeout(() => win.fullScreen = true);
-        // });
-        win.setKiosk(true);
+        win.addListener('leave-full-screen', () => {
+            console.log("win: leave full screen");
+            setTimeout(() => win.fullScreen = true);
+        });
+        // win.setKiosk(true);
         win.setMinimizable(false);
     }
 
