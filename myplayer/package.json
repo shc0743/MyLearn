@@ -1,0 +1,20 @@
+{
+  "name": "player",
+  "version": "1.0.0",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "test": "electron .",
+    "build": "electron-packager . player --out dist --arch=x64 --overwrite"
+  },
+  "author": "",
+  "license": "MIT",
+  "description": "",
+  "devDependencies": {
+    "@electron/packager": "^18.3.6",
+    "electron": "^36.2.0"
+  },
+  "dependencies": {
+    "minimist": "^1.2.8"
+  }
+}
