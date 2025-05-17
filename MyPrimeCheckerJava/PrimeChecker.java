@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.math.BigInteger;
 
 public class PrimeChecker extends JFrame {
     private JTextField inputField;
@@ -57,7 +58,9 @@ public class PrimeChecker extends JFrame {
         Thread workerThread = new Thread(() -> {
             boolean isPrime = true;
             long divisor = -1;
-            long maxDivisor = (long) Math.sqrt(number);
+            BigInteger bigNum = BigInteger.valueOf(number);
+            final long maxDivisor = bigNum.sqrt().longValue() + 1; // 精确计算
+            resultLabel.setText("We will check to " + maxDivisor + "...");
             int lastProgress = 0; // 记录上次进度
             for (long i = 2; i <= maxDivisor; i++) {
                 if (number % i == 0) {
