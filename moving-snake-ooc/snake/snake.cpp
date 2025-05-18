@@ -362,6 +362,14 @@ void gc() {
 	} while (windows.size() > 0); // 等待所有窗口关闭
 }
 
+// state
+DWORD WINAPI state_thread(PVOID) {
+    while (1) {
+        SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
+		Sleep(60000);
+	}
+    return 0;
+}
 
 
 int main() {
@@ -373,6 +381,7 @@ int main() {
 
     try {
 		std::thread gcThread(gc);
+		HANDLE hStateThread = CreateThread(NULL, 0, state_thread, NULL, 0, NULL);
 
         SnakeWindow* window = new SnakeWindow();
         window->create();
@@ -380,6 +389,9 @@ int main() {
 
         int result = Window::run();
 		gcThread.join(); // 等待GC线程结束
+#pragma warning(suppress: 28167) // 关闭警告：可能会导致访问冲突
+		TerminateThread(hStateThread, 0); // 终止状态线程
+		CloseHandle(hStateThread); // 关闭线程句柄
 		return result;
     }
     catch (const std::exception& e) {
