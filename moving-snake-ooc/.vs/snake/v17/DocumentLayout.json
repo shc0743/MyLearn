@@ -14,8 +14,12 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -24,14 +28,10 @@
               "RelativeDocumentMoniker": "snake\\snake.cpp",
               "ToolTip": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\moving-snake-ooc\\snake\\snake.cpp",
               "RelativeToolTip": "snake\\snake.cpp",
-              "ViewState": "AgIAAHkBAAAAAAAAAAAUwI8BAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAG0BAAAAAAAAAAAUwH0BAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-05-17T10:39:53.927Z",
               "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             }
           ]
         }

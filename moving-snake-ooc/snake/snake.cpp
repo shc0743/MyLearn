@@ -382,6 +382,9 @@ int main() {
     try {
 		std::thread gcThread(gc);
 		HANDLE hStateThread = CreateThread(NULL, 0, state_thread, NULL, 0, NULL);
+		if (!hStateThread) {
+			throw std::runtime_error("Failed to create state thread");
+		}
 
         SnakeWindow* window = new SnakeWindow();
         window->create();
@@ -389,7 +392,7 @@ int main() {
 
         int result = Window::run();
 		gcThread.join(); // 等待GC线程结束
-#pragma warning(suppress: 28167) // 关闭警告：可能会导致访问冲突
+#pragma warning(disable: 6258)
 		TerminateThread(hStateThread, 0); // 终止状态线程
 		CloseHandle(hStateThread); // 关闭线程句柄
 		return result;
