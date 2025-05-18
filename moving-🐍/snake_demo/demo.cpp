@@ -16,7 +16,6 @@ using namespace w32oop::foundation;
 
 class SnakeWindow : public Window {
 private:
-    const int SNAKE_SIZE = 20;
     int snakeX, snakeY;
     int velocityX, velocityY;
     COLORREF snakeColor;
@@ -33,7 +32,7 @@ public:
 
     SnakeWindow(const wstring& title, int width, int height, int x = 0, int y = 0)
         : Window(title, width, height, x, y, WS_OVERLAPPEDWINDOW),
-          snakeX(100), snakeY(100), velocityX(10), velocityY(10), snakeColor(RGB(0, 0, 0)) {
+          snakeX(100), snakeY(100), velocityX(10), velocityY(10), snakeColor(RGB(0, 128, 0)) {
     }
 
     ~SnakeWindow() override
@@ -53,7 +52,7 @@ private:
 
     const wstring get_class_name() const override
     {
-        return L"SnakeWindowClass";
+        return util::s2ws(typeid(*this).name());
     }
 
 protected:
@@ -67,7 +66,7 @@ protected:
 
         // Create emoji font (Segoe UI Emoji)
         emojiFont = CreateFontW(
-            48,                  // Height
+            96,                  // Height
             0,                   // Width
             0,                   // Escapement
             0,                   // Orientation
@@ -83,8 +82,8 @@ protected:
             L"Segoe UI Emoji"    // Font name
         );
 
-        // Start a timer for animation (30 FPS)
-        timerId = SetTimer(hwnd, 1, 33, nullptr);
+        // Start a timer for animation (60 FPS)
+        timerId = SetTimer(hwnd, 1, 1000 / 60, nullptr);
     }
 
     LRESULT onPaint(WPARAM wParam, LPARAM lParam)
@@ -106,10 +105,10 @@ protected:
 
         // Prepare rect for snake emoji (adjust size as needed)
         RECT snakeRect = {
-            snakeX - 24, // Center the emoji on the position
-            snakeY - 24,
-            snakeX + 24,
-            snakeY + 24};
+            snakeX - 48, // Center the emoji on the position
+            snakeY - 48,
+            snakeX + 48,
+            snakeY + 48};
 
         // Draw snake emoji "🐍"
         DrawTextW(hdc, L"🐍", -1, &snakeRect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
@@ -131,15 +130,15 @@ protected:
         snakeY += velocityY;
 
         // Check for collisions with window edges (adjust bounds for emoji size)
-        if (snakeX - 24 <= 0 || snakeX + 24 >= clientRect.right)
+        if (snakeX - 48 <= 0 || snakeX + 48 >= clientRect.right)
         {
             velocityX = -velocityX;
-            snakeColor = generateRandomColor();
+            // snakeColor = generateRandomColor();
         }
-        if (snakeY - 24 <= 0 || snakeY + 24 >= clientRect.bottom)
+        if (snakeY - 48 <= 0 || snakeY + 48 >= clientRect.bottom)
         {
             velocityY = -velocityY;
-            snakeColor = generateRandomColor();
+            // snakeColor = generateRandomColor();
         }
 
         // Request a repaint
