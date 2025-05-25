@@ -328,13 +328,16 @@ private:
     }
 
     LRESULT onCreateNewInstance(WPARAM wParam, LPARAM lParam) {
+        // 实际上只不过是需要把所有签名改成
+        // void onCreateNewInstance(EventData & event)
+        // 不知道为啥会卡死
         SnakeWindow* newWindow = new SnakeWindow();
         newWindow->create();
         newWindow->show();
         return 0;
     }
 
-    WINDOW_EVENT_HANDLER_DECLARE_BEGIN()
+    virtual void setup_event_handlers() override {
         WINDOW_add_handler(WM_TIMER, onTimer);
         WINDOW_add_handler(WM_KEYDOWN, onKeyDown);
         WINDOW_add_handler(WM_PAINT, onPaint);
@@ -344,7 +347,7 @@ private:
         WINDOW_add_handler(WM_NCHITTEST, onNcHitTest);
         WINDOW_add_handler(WM_DESTROY, onDestroy);
         WINDOW_add_handler(WM_USER + 1, onCreateNewInstance);
-    WINDOW_EVENT_HANDLER_DECLARE_END()
+    }
 };
 
 // GC
