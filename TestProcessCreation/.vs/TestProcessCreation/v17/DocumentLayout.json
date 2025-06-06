@@ -1,0 +1,41 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\TestProcessCreation\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{59152503-A179-4CAB-A57E-89F00AD87B52}|TestProcessCreation\\TestProcessCreation.vcxproj|D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\TestProcessCreation\\TestProcessCreation\\TestProcessCreation.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{59152503-A179-4CAB-A57E-89F00AD87B52}|TestProcessCreation\\TestProcessCreation.vcxproj|solutionrelative:TestProcessCreation\\TestProcessCreation.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "TestProcessCreation.cpp",
+              "DocumentMoniker": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\TestProcessCreation\\TestProcessCreation\\TestProcessCreation.cpp",
+              "RelativeDocumentMoniker": "TestProcessCreation\\TestProcessCreation.cpp",
+              "ToolTip": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\TestProcessCreation\\TestProcessCreation\\TestProcessCreation.cpp",
+              "RelativeToolTip": "TestProcessCreation\\TestProcessCreation.cpp",
+              "ViewState": "AgIAAIMAAAAAAAAAAADwv50AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-01T03:48:32.459Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
