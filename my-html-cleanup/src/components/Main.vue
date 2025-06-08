@@ -1,5 +1,10 @@
 <template>
-    <div class="MyMain">
+    <div class="MyMain"
+        @dragover="(checkIfDragIsAllowed($event) && (($event.dataTransfer.dropEffect = 'link'), (isDragOver = true)))"
+        @keydown.capture.esc="isDragOver = false"
+    >
+        <div v-if="isDragOver" @dragleave.self="isDragOver = false" @dragover="(checkIfDragIsAllowed($event))" @click.self="isDragOver = false" @drop.capture="onDrop" class="cover"><div inert style="pointer-events: none;">Drop</div></div>
+
         <div role="heading" class="MyTitle">
             <ElTooltip trigger="hover" effect="dark" content="Reset preferences" placement="bottom">
                 <ElButton @click="resetPrefs" @keydown.capture.stop @focus="$event.target.dispatchEvent(new MouseEvent('mouseenter'))" @blur="$event.target.dispatchEvent(new MouseEvent('mouseleave'))"><ElIcon><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path fill="currentColor" d="M764.288 214.592 512 466.88 259.712 214.592a31.936 31.936 0 0 0-45.12 45.12L466.752 512 214.528 764.224a31.936 31.936 0 1 0 45.12 45.184L512 557.184l252.288 252.288a31.936 31.936 0 0 0 45.12-45.12L557.12 512.064l252.288-252.352a31.936 31.936 0 1 0-45.12-45.184z"></path></svg></ElIcon></ElButton>
@@ -8,9 +13,14 @@
             <ElButton @click="toggleDark"><ElIcon><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 704a192 192 0 1 0 0-384 192 192 0 0 0 0 384m0 64a256 256 0 1 1 0-512 256 256 0 0 1 0 512m0-704a32 32 0 0 1 32 32v64a32 32 0 0 1-64 0V96a32 32 0 0 1 32-32m0 768a32 32 0 0 1 32 32v64a32 32 0 1 1-64 0v-64a32 32 0 0 1 32-32M195.2 195.2a32 32 0 0 1 45.248 0l45.248 45.248a32 32 0 1 1-45.248 45.248L195.2 240.448a32 32 0 0 1 0-45.248zm543.104 543.104a32 32 0 0 1 45.248 0l45.248 45.248a32 32 0 0 1-45.248 45.248l-45.248-45.248a32 32 0 0 1 0-45.248M64 512a32 32 0 0 1 32-32h64a32 32 0 0 1 0 64H96a32 32 0 0 1-32-32m768 0a32 32 0 0 1 32-32h64a32 32 0 1 1 0 64h-64a32 32 0 0 1-32-32M195.2 828.8a32 32 0 0 1 0-45.248l45.248-45.248a32 32 0 0 1 45.248 45.248L240.448 828.8a32 32 0 0 1-45.248 0zm543.104-543.104a32 32 0 0 1 0-45.248l45.248-45.248a32 32 0 0 1 45.248 45.248l-45.248 45.248a32 32 0 0 1-45.248 0"></path></svg></ElIcon></ElButton>
         </div>
         <ElInput v-model="userContent" :disabled="isRunning" type="textarea" class="MyInput" placeholder="Input HTML here..." />
-        <div class="MySegment MyStat">
-            <span style="color: var(--el-color-info)">Length:&nbsp;</span>
+        <div class="MySegment MyStat MyHideScroll MyScrollControlParent">
+            <span style="color: var(--el-color-info)">Length:</span>
             <span v-text="userContent.length"></span>
+            <span style="color: var(--el-color-info)">|</span>
+            <span style="color: var(--el-color-info)">Add file:</span>
+            <input type="file" autocomplete="off" multiple @change="onFileChange" hidden ref="fileChooser" />
+            <a href="javascript:" @click="fileChooser.click()">Browse</a>
+            <span style="color: var(--el-color-info)">or drag</span>
         </div>
         <div class="MySegment MyConfig MyNoMargin">
             <div class="MyConfigRow MyHideScroll MyScrollControlParent">
@@ -157,6 +167,62 @@ async function resetPrefs() {
     }).finally(() => {
         window.location.reload();
     })
+}
+
+// DnD
+const fileChooser = ref(null);
+const isDragOver = ref(false);
+const add_file = async (file) => {
+    const arr = [];
+    let totalSize = 0;
+    for (const f of file) {
+        arr.push(`\n<!-- ${f.name} -->\n`);
+        if (f.size > 1024 * 1024) { // 1MB
+            arr.push(`<!-- File "${f.name}" is too large. Skipped. -->\n`);
+            continue;
+        }
+        totalSize += f.size;
+        if (totalSize > 1024 * 1024 * 16) { // 16MB
+            ElMessage.warning('Total file size is too large. Skipped files after "' + f.name + '".');
+            break;
+        }
+        arr.push(await f.text());
+    }
+    userContent.value = await (new Blob(arr)).text();
+};
+const onFileChange = () => {
+    add_file(fileChooser.value.files).then(() => {
+        fileChooser.value.value = '';
+    }).catch((err) => {
+        ElMessage.error('Failed to read file: ' + err);
+    });
+}
+function checkIfDragIsAllowed(ev) {
+    const types = ev.dataTransfer.types;
+    const checkResult = (() => {
+        const typesarr = [
+            'application/octet-stream',
+        ];
+        for (const i of types) {
+            if (typesarr.includes(i)) return true;
+            if (i === 'Files') return { dropEffect: 'copy' };
+        }
+    })();
+    if (!checkResult) return;
+    ev.preventDefault();
+
+    return true;
+}
+const onDrop = (event) => {
+    const dataTransfer = event.dataTransfer;
+    isDragOver.value = false;
+    if (!dataTransfer.files.length) return;
+    event.preventDefault()
+    event.stopPropagation();
+    const file = dataTransfer.files;
+    requestAnimationFrame(() => add_file(file).catch((err) => {
+        ElMessage.error('Failed to read file: ' + err);
+    }));
 }
 
 // Core logic
@@ -341,7 +407,13 @@ async function run() {
     flex: 1;
 }
 .MyStat {
-    overflow: hidden;
+    white-space: nowrap;
+}
+.MyStat > * {
+    margin-right: 0.5em;
+}
+.MyStat > *:nth-last-child(1) {
+    margin-right: 0;
 }
 .MyScrollControlParent {
     overflow: auto;
@@ -378,6 +450,25 @@ async function run() {
 .MyFullscreenDialog[open] {
     display: flex;
     flex-direction: column;
+}
+
+.cover {
+    position: fixed;
+    inset: 0;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    z-index: 99999999;
+    background: white;
+    opacity: 0.5;
+    display: grid;
+    place-items: center;
+}
+.cover * {
+    pointer-events: none;
+    touch-action: none;
 }
 </style>
 
