@@ -43,6 +43,10 @@
                 <ElCheckbox v-model="h5config.removes.embed">embed</ElCheckbox>
                 <ElCheckbox v-model="h5config.removes.object">object</ElCheckbox>
             </div>
+            <div class="MyConfigRow" v-if="mode === 'html5'">
+                <span style="margin-right: 0.5em;">Custom rule</span>
+                <ElInput v-model="h5config.custom_rule" placeholder="Input custom CSS selector here..." />
+            </div>
         </div>
         <div class="MySegment MyButtonGroup">
             <ElButton :type="(!!userContent) ? 'info' : 'primary'" plain class="MyButton MyFlex1" @click="doPaste" :disabled="!!userContent">Paste</ElButton>
@@ -251,7 +255,10 @@ async function run() {
         const root = document.createElement('my-html-cleanup');
         root.innerHTML = userContent.value;
         // Remove things according to the configuration
-        const removesList = Reflect.ownKeys(h5config.value.removes).filter((k) => !!h5config.value.removes[k]).join(',');
+        let removesList = Reflect.ownKeys(h5config.value.removes).filter((k) => !!h5config.value.removes[k]).join(',');
+        if (h5config.value.custom_rule) {
+            removesList += ',' + h5config.value.custom_rule;
+        }
         if (removesList) {
             for (const el of root.querySelectorAll(removesList)) {
                 el.remove();
@@ -355,6 +362,7 @@ async function run() {
     display: flex;
     flex-direction: row;
     align-items: center;
+    white-space: nowrap;
 }
 .MyNoMargin {
     margin: 0;
