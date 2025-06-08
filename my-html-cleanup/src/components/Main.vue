@@ -25,7 +25,7 @@
                 <span :style="{ color: dpConfigValid ? '' : 'red', 'margin-right': '0.5em' }">Configuration</span>
                 <ElInput @click="dpConfigDlg.showModal()" @keydown.enter="dpConfigDlg.showModal()" :style="`--el-input-text-color: ${ dpConfigValid ? '' : 'red' }`" v-model="dpConfig" placeholder="Input DOMPurify configuration here..." clearable show-word-limit maxlength="999999" />
             </div>
-            <div class="MyConfigRow" style="display: block;" v-if="mode === 'html5' && (!userSeenH5Warning)">
+            <div v-if="mode === 'html5' && (!userSeenH5Warning)">
                 <span style="color: #cc0000; margin-right: 0.5em; word-break: break-all;">* Cleanup only. No purification.</span>
                 <a href="javascript:" @click.prevent="userSeenH5Warning = true">I see</a>
             </div>
