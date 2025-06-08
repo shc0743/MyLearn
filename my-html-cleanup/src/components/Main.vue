@@ -240,20 +240,20 @@ async function run() {
         isRunning.value = false;
         return;
     }
+
+    // use DOM API to cleanup HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(userContent.value, 'text/html');
+    const root = doc.body;
+    root.innerHTML = userContent.value;
     if (mode.value === 'text') {
-        const node = document.createElement('div');
-        node.innerHTML = userContent.value;
         userContent_old.value = userContent.value;
-        userContent.value = node.textContent;
+        userContent.value = root.textContent;
         ElMessage.success(`Cleaned ${oldLength - userContent.value.length} characters`);
         isRunning.value = false;
         return;
     }
-
-    // use DOM API to cleanup HTML
     try {
-        const root = document.createElement('my-html-cleanup');
-        root.innerHTML = userContent.value;
         // Remove things according to the configuration
         let removesList = Reflect.ownKeys(h5config.value.removes).filter((k) => !!h5config.value.removes[k]).join(',');
         if (h5config.value.custom_rule) {
