@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Canvas Client</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        #status {
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        #canvas {
+            display: block;
+            background-color: #f0f0f0;
+        }
+        input, button {
+            margin: 5px 0;
+        }
+        button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <h3>WebSocket Canvas Client</h3>
+        <div>
+            <label for="serverUrl">Server URL:</label>
+            <input type="text" id="serverUrl" placeholder="ws://localhost:8080/fd/echo" value="ws://localhost:8080/fd/echo">
+        </div>
+        <div>
+            <label for="clientId">Client ID:</label>
+            <input type="text" id="clientId" placeholder="Enter client ID">
+        </div>
+        <div>
+            <label for="token">Token (if required):</label>
+            <input type="text" id="token" placeholder="Optional token">
+        </div>
+        <button id="connectBtn">Connect</button>
+        <div id="status">Disconnected</div>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Resize canvas to full window
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Game state
+        const state = {
+            me: { x: 100, y: 100, color: '#3498db' },
+            other: { x: 200, y: 200, color: '#e74c3c' },
+            connected: false,
+            ws: null,
+            movement: { up: false, down: false, left: false, right: false },
+            speed: 3,
+            lastUpdate: 0,
+            updateInterval: 50 // ms between position updates
+        };
+        
+        // Draw everything
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw other player
+            ctx.beginPath();
+            ctx.arc(state.other.x, state.other.y, 20, 0, Math.PI * 2);
+            ctx.fillStyle = state.other.color;
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.stroke();
+            
+            // Draw me
+            ctx.beginPath();
+            ctx.arc(state.me.x, state.me.y, 20, 0, Math.PI * 2);
+            ctx.fillStyle = state.me.color;
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.stroke();
+            
+            requestAnimationFrame(draw);
+        }
+        
+        // Start drawing loop
+        draw();
+        
+        // Movement handling
+        function updatePosition() {
+            if (!state.connected) return;
+            
+            const now = Date.now();
+            if (now - state.lastUpdate < state.updateInterval) return;
+            state.lastUpdate = now;
+            
+            let moved = false;
+            let newX = state.me.x;
+            let newY = state.me.y;
+            
+            if (state.movement.up) {
+                newY -= state.speed;
+                moved = true;
+            }
+            if (state.movement.down) {
+                newY += state.speed;
+                moved = true;
+            }
+            if (state.movement.left) {
+                newX -= state.speed;
+                moved = true;
+            }
+            if (state.movement.right) {
+                newX += state.speed;
+                moved = true;
+            }
+            
+            // Boundary checking
+            newX = Math.max(20, Math.min(canvas.width - 20, newX));
+            newY = Math.max(20, Math.min(canvas.height - 20, newY));
+            
+            if (moved && (newX !== state.me.x || newY !== state.me.y)) {
+                state.me.x = newX;
+                state.me.y = newY;
+                sendPosition();
+            }
+        }
+        
+        // Keyboard controls
+        window.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'w': state.movement.up = true; break;
+                case 's': state.movement.down = true; break;
+                case 'a': state.movement.left = true; break;
+                case 'd': state.movement.right = true; break;
+            }
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'w': state.movement.up = false; break;
+                case 's': state.movement.down = false; break;
+                case 'a': state.movement.left = false; break;
+                case 'd': state.movement.right = false; break;
+            }
+        });
+        
+        // Click to move
+        canvas.addEventListener('click', (e) => {
+            if (!state.connected) return;
+            
+            state.me.x = e.clientX;
+            state.me.y = e.clientY;
+            sendPosition();
+        });
+        
+        // Movement update loop
+        setInterval(updatePosition, 16);
+        
+        // WebSocket communication
+        function sendPosition() {
+            if (!state.connected) return;
+            
+            const message = JSON.stringify({
+                type: 'position',
+                x: state.me.x,
+                y: state.me.y
+            });
+            
+            state.ws.send(message);
+        }
+        
+        // Connect button
+        document.getElementById('connectBtn').addEventListener('click', connect);
+        
+        function connect() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            const clientId = document.getElementById('clientId').value;
+            const token = document.getElementById('token').value;
+            
+            if (!clientId) {
+                alert('Please enter a client ID');
+                return;
+            }
+            
+            // Set color based on client ID (simple hash)
+            const hash = clientId.split('').reduce((a, b) => {
+                a = ((a << 5) - a) + b.charCodeAt(0);
+                return a & a;
+            }, 0);
+            
+            state.me.color = hash % 2 === 0 ? '#3498db' : '#e74c3c';
+            state.other.color = hash % 2 === 0 ? '#e74c3c' : '#3498db';
+            
+            // Build URL with parameters
+            let url = new URL(serverUrl);
+            url.searchParams.append('client_id', clientId);
+            if (token) {
+                url.searchParams.append('token', token);
+            }
+            
+            // Connect to WebSocket
+            state.ws = new WebSocket(url.toString());
+            
+            state.ws.onopen = () => {
+                state.connected = true;
+                document.getElementById('status').textContent = 'Connected';
+                document.getElementById('status').style.color = 'green';
+                
+                // Send initial position
+                sendPosition();
+            };
+            
+            state.ws.onclose = () => {
+                state.connected = false;
+                document.getElementById('status').textContent = 'Disconnected';
+                document.getElementById('status').style.color = 'red';
+            };
+            
+            state.ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                document.getElementById('status').textContent = 'Connection error';
+                document.getElementById('status').style.color = 'red';
+            };
+            
+            state.ws.onmessage = (message) => {
+                try {
+                    const data = JSON.parse(message.data);
+                    
+                    if (data.type === 'position') {
+                        state.other.x = data.x;
+                        state.other.y = data.y;
+                    } else if (data === 'connected') {
+                        // Another client connected - send our position
+                        sendPosition();
+                    }
+                } catch (e) {
+                    console.error('Error parsing message:', e);
+                }
+            };
+        }
+    </script>
+</body>
+</html>
