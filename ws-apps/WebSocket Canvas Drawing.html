@@ -201,7 +201,7 @@
             canvas.addEventListener('pointerout', stopDrawing);
             
             // Handle incoming drawing commands
-            function handleRemoteDrawing(data) {
+            function handleRemoteDrawing(data, socket, canvas) {
                 switch(data.type) {
                     case 'draw':
                         ctx.beginPath();
@@ -215,6 +215,25 @@
                     case 'clear':
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         break;
+                    case 'request_full_state':
+                        // Send current canvas state as base64
+                        const canvasData = canvas.toDataURL('image/png');
+                        socket.send(JSON.stringify({
+                            type: 'receive_full_state',
+                            data: canvasData
+                        }));
+                        break;
+                    case 'receive_full_state':
+                        // Load received canvas state
+                        const img = new Image();
+                        img.onload = function() {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0);
+                        };
+                        img.src = data.data;
+                        break;
+                    default:
+                        console.warn('Unknown drawing command type:', data.type);
                 }
             }
             
@@ -282,19 +301,7 @@
                     if (!event.data) return;
                     try {
                         const data = JSON.parse(event.data);
-                        if (data.type === 'full_state') {
-                            // Handle initial canvas state
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            if (data.imageData) {
-                                const img = new Image();
-                                img.onload = function() {
-                                    ctx.drawImage(img, 0, 0);
-                                };
-                                img.src = data.imageData;
-                            }
-                        } else {
-                            handleRemoteDrawing(data);
-                        }
+                        handleRemoteDrawing(data, socket, canvas);
                     } catch (e) {
                         console.error('Error parsing message:', e);
                     }
