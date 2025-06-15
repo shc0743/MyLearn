@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Canvas Drawing</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        .control-panel {
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .control-panel input, .control-panel button {
+            padding: 8px;
+            border-radius: 4px;
+            border: none;
+        }
+        .control-panel button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        .control-panel button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-left: auto;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: #666;
+        }
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        #drawingCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: white;
+            cursor: crosshair;
+        }
+        .disconnected {
+            background-color: #f44336 !important;
+        }
+        .connected {
+            background-color: #4CAF50 !important;
+        }
+        #drawingCanvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body>
+    <button id="togglePanelBtn" style="position: fixed; left: 10px; top: 10px; z-index: 10;">^</button>
+    <div class="control-panel">
+        <input type="text" id="serverAddress" placeholder="ws://server:port/fd/echo" value="ws://localhost:29154/fd/echo">
+        <input type="text" id="clientId" placeholder="Client ID" value="room1">
+        <input type="text" id="token" placeholder="Token (if required)">
+        <div class="color-picker">
+            <label for="color">Color:</label>
+            <input type="color" id="color" value="#000000">
+        </div>
+        <input type="range" id="brushSize" min="1" max="50" value="5">
+        <span id="brushSizeValue">5</span>
+        <button id="clearBtn">Clear Canvas</button>
+        <button id="connectBtn">Connect</button>
+        <span id="status" class="status disconnected">Disconnected</span>
+    </div>
+    <div id="canvas-container">
+        <canvas id="drawingCanvas"></canvas>
+    </div>
+
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', function() {
+            // UI Elements
+            const serverAddressInput = document.getElementById('serverAddress');
+            // Load saved server address if exists
+            const savedAddress = localStorage.getItem('WebSocket Canvas Drawing.html::server_address');
+            if (savedAddress) {
+                serverAddressInput.value = savedAddress;
+            }
+            const clientIdInput = document.getElementById('clientId');
+            const tokenInput = document.getElementById('token');
+            const colorInput = document.getElementById('color');
+            const brushSizeInput = document.getElementById('brushSize');
+            const brushSizeValue = document.getElementById('brushSizeValue');
+            const clearBtn = document.getElementById('clearBtn');
+            const connectBtn = document.getElementById('connectBtn');
+            const statusSpan = document.getElementById('status');
+            const canvas = document.getElementById('drawingCanvas');
+            const canvasContainer = document.getElementById('canvas-container');
+            
+            // Canvas setup
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+            let currentColor = colorInput.value;
+            let currentBrushSize = parseInt(brushSizeInput.value);
+            
+            // WebSocket
+            let socket = null;
+            let isConnected = false;
+            
+            // Resize canvas to fill container
+            function resizeCanvas() {
+                canvas.width = canvasContainer.clientWidth;
+                canvas.height = canvasContainer.clientHeight;
+                // Redraw or send request for full canvas state if needed
+            }
+            
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            
+            // Brush size display
+            brushSizeInput.addEventListener('input', function() {
+                currentBrushSize = parseInt(this.value);
+                brushSizeValue.textContent = currentBrushSize;
+            });
+            
+            // Color change
+            colorInput.addEventListener('input', function() {
+                currentColor = this.value;
+            });
+            
+            // Clear canvas
+            clearBtn.addEventListener('click', function() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (isConnected) {
+                    socket.send(JSON.stringify({
+                        type: 'clear'
+                    }));
+                }
+            });
+            
+            // Drawing functions
+            function startDrawing(e) {
+                e.preventDefault();
+                isDrawing = true;
+                [lastX, lastY] = [e.offsetX, e.offsetY];
+            }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentBrushSize;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                
+                // Send drawing data to server
+                if (isConnected) {
+                    socket.send(JSON.stringify({
+                        type: 'draw',
+                        fromX: lastX,
+                        fromY: lastY,
+                        toX: e.offsetX,
+                        toY: e.offsetY,
+                        color: currentColor,
+                        width: currentBrushSize
+                    }));
+                }
+                
+                [lastX, lastY] = [e.offsetX, e.offsetY];
+            }
+            
+            function stopDrawing() {
+                isDrawing = false;
+            }
+            
+            // Pointer event listeners
+            canvas.addEventListener('pointerdown', startDrawing);
+            canvas.addEventListener('pointermove', draw);
+            canvas.addEventListener('pointerup', stopDrawing);
+            canvas.addEventListener('pointerout', stopDrawing);
+            
+            // Handle incoming drawing commands
+            function handleRemoteDrawing(data) {
+                switch(data.type) {
+                    case 'draw':
+                        ctx.beginPath();
+                        ctx.moveTo(data.fromX, data.fromY);
+                        ctx.lineTo(data.toX, data.toY);
+                        ctx.strokeStyle = data.color;
+                        ctx.lineWidth = data.width;
+                        ctx.lineCap = 'round';
+                        ctx.stroke();
+                        break;
+                    case 'clear':
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        break;
+                }
+            }
+            
+            // WebSocket connection
+            connectBtn.addEventListener('click', function() {
+                if (isConnected) {
+                    disconnect();
+                    return;
+                }
+                
+                const serverAddress = serverAddressInput.value;
+                const clientId = clientIdInput.value;
+                const token = tokenInput.value;
+                
+                if (!serverAddress || !clientId) {
+                    alert('Please enter server address and client ID');
+                    return;
+                }
+                
+                // Build WebSocket URL with parameters
+                let wsUrl = serverAddress;
+                wsUrl += wsUrl.includes('?') ? '&' : '?';
+                wsUrl += `client_id=${encodeURIComponent(clientId)}`;
+                
+                if (token) {
+                    wsUrl += `&token=${encodeURIComponent(token)}`;
+                }
+                
+                // Save server address to localStorage
+                localStorage.setItem('WebSocket Canvas Drawing.html::server_address', serverAddress);
+                
+                socket = new WebSocket(wsUrl);
+                
+                socket.onopen = function() {
+                    isConnected = true;
+                    statusSpan.textContent = 'Awaiting client';
+                    connectBtn.textContent = 'Disconnect';
+                    
+                    // Request full canvas state if another client is already connected
+                    socket.send(JSON.stringify({
+                        type: 'request_full_state'
+                    }));
+                };
+                
+                socket.onclose = function() {
+                    isConnected = false;
+                    statusSpan.textContent = 'Disconnected';
+                    statusSpan.classList.remove('connected');
+                    statusSpan.classList.add('disconnected');
+                    connectBtn.textContent = 'Connect';
+                };
+                
+                socket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    alert('WebSocket connection error');
+                };
+                
+                socket.onmessage = function(event) {
+                    if (event.data === 'connected') {
+                        statusSpan.classList.remove('disconnected');
+                        statusSpan.classList.add('connected');
+                        statusSpan.textContent = 'Connected';
+                        return;
+                    }
+                    if (!event.data) return;
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'full_state') {
+                            // Handle initial canvas state
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            if (data.imageData) {
+                                const img = new Image();
+                                img.onload = function() {
+                                    ctx.drawImage(img, 0, 0);
+                                };
+                                img.src = data.imageData;
+                            }
+                        } else {
+                            handleRemoteDrawing(data);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing message:', e);
+                    }
+                };
+            });
+            
+            function disconnect() {
+                if (socket) {
+                    socket.close();
+                }
+            }
+            
+            // Handle page unload
+            window.addEventListener('beforeunload', function() {
+                disconnect();
+            });
+            
+            // Toggle control panel visibility
+            const togglePanelBtn = document.getElementById('togglePanelBtn');
+            const controlPanel = document.querySelector('.control-panel');
+            controlPanel.style.display = 'flex'; // Ensure initial state is visible
+            togglePanelBtn.addEventListener('click', function() {
+                controlPanel.style.display = controlPanel.style.display === 'none' ? 'flex' : 'none';
+                this.textContent = controlPanel.style.display === 'none' ? 'v' : '^';
+                window.dispatchEvent(new CustomEvent('resize')); // Trigger canvas resize
+            });
+        });
+    </script>
+</body>
+</html>
