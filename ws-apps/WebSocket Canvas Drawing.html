@@ -22,6 +22,7 @@
             flex-wrap: wrap;
             gap: 10px;
             align-items: center;
+            z-index: 1;
         }
         .control-panel input, .control-panel button {
             padding: 8px;
@@ -49,9 +50,9 @@
             gap: 5px;
         }
         #canvas-container {
-            flex: 1;
-            position: relative;
             overflow: hidden;
+            position: absolute;
+            inset: 0;
         }
         #drawingCanvas {
             position: absolute;
@@ -159,6 +160,7 @@
                 e.preventDefault();
                 isDrawing = true;
                 [lastX, lastY] = [e.offsetX, e.offsetY];
+                canvas.setPointerCapture(e.pointerId);
             }
             
             function draw(e) {
@@ -317,7 +319,6 @@
             togglePanelBtn.addEventListener('click', function() {
                 controlPanel.style.display = controlPanel.style.display === 'none' ? 'flex' : 'none';
                 this.textContent = controlPanel.style.display === 'none' ? 'v' : '^';
-                window.dispatchEvent(new CustomEvent('resize')); // Trigger canvas resize
             });
         });
     </script>
