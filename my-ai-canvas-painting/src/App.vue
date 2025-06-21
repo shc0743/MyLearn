@@ -12,7 +12,7 @@
             <resizable-widget ref="codeShowingDialog" style="width: 60%; height: 60%;">
                 <div slot="widget-caption">代码</div>
                 <div class="myCodeDialog" open>
-                    <textarea autocomplete="off" v-model="currentCodeShowToUser" readonly></textarea>
+                    <textarea autocomplete="off" v-model="currentCodeShowToUser"></textarea>
                     <button @click="codeShowingDialog.close()" class="MyButton">关闭</button>
                 </div>
             </resizable-widget>
