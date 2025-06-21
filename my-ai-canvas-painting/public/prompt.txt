@@ -28,13 +28,18 @@
 1. sandboxed的iframe
 2. 执行特性：
    - 指令将逐行流式执行（每行独立）
-   - 指令解析器是这样的：(new Function('ctx', 'canvas', code))(ctx, canvas)
    - 你的指令会被按行拆分，这意味着 `const myVar = 1; myVar` 是可行的，但
    ```
    const myVar = 1;
    myVar
    ```
-   将会产生 ReferenceError。可以使用变量，但必须放在同一行。请务必注意这一点。
+   将会产生 ReferenceError。可以使用变量，但必须放在同一行。
+   - 如果确实需要跨行，你可以使用 globalThis 对象存储少量信息。
+   - 你的指令会被包装到一个异步函数。格式如下：
+   ```
+   ((async function UserContent() { /* 你的指令 */ })())
+   ```
+   - 你可以在里面使用 await 关键字。
 
 ## 示例1
 
