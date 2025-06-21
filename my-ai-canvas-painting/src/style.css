@@ -1,0 +1,23 @@
+#app {
+    position: absolute;
+    inset: 0;
+}
+a {
+    color: blue;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+a, button {
+    cursor: pointer;
+}
+*:disabled, *[disabled] {
+    cursor: not-allowed !important;
+}
+:root * {
+    font-family: Consolas, NSimsun, monospace;
+}
+.Toastify__progress-bar {
+    opacity: 0 !important;
+}
