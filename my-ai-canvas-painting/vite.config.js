@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [vue({
     template: {
       compilerOptions: {
-        isCustomElement: (tag) => tag === 'resizable-widget'
+        isCustomElement: (tag) => ['resizable-widget', 'x-canvas-api-draw-im-command'].includes(tag)
       }
     }
   })],

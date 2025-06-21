@@ -21,3 +21,6 @@ a, button {
 .Toastify__progress-bar {
     opacity: 0 !important;
 }
+::selection {
+    background-color: #8dc7f899
+}
