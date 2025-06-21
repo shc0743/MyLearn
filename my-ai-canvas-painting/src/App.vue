@@ -303,7 +303,7 @@ const set_drop_effect = e => {
 const userCmdExec = () => {
     execCommandInContext(cmdToExecute.value, 'code').then(r => {
         if (r.success) toast.success('已执行，结果：' + JSON.stringify(r));
-        else toast.error('执行失败，原因：' + r.error);
+        else toast.error('执行失败，原因：' + (r.stack || r.error));
     }).catch(e => {
         toast.error(e);
     }).finally(() => {
@@ -315,7 +315,6 @@ const handleEnterDown = e => {
 };
 const redraw_content = async (commands) => {
     try {
-        toast.success('正在绘制...', { delay: 500 });
         await execCommandInContext('clear');
         await execCommandInContext(commands, 'code');
         toast.success('已经重绘', { delay: 500 });
