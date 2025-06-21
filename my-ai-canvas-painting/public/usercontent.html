@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Content</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'">
+    <style>
+    #app {
+        position: absolute;
+        left: 0; top: 0;
+    }
+    </style>
+</head>
+<body>
+    
+    <canvas id="app"></canvas>
+
+    <script type="module">
+    const app = document.getElementById('app');
+    app.width = document.documentElement.clientWidth;
+    app.height = document.documentElement.clientHeight;
+    const ctx = app.getContext('2d');
+    
+    globalThis.canvas = app;
+    globalThis.ctx = ctx;
+
+    function reply(data, sender) {
+        globalThis.parent.postMessage({
+            data,
+            sender
+        }, '*');
+    }
+
+    function evaluate(code, sender) {
+        let result;
+        try {
+            const fn = new Function('ctx', 'canvas', code);
+            result = {
+                success: true,
+                result: fn(ctx, canvas)
+            };
+        } catch (e) {
+            result = {
+                success: false,
+                error: String(e),
+                stack: String(e?.stack),
+            };
+        }
+        reply(result, sender);
+    }
+
+    globalThis.addEventListener('message', (e) => {
+        if (e.origin !== location.origin) {
+            return;
+        }
+
+        const sender = e.data?.sender;
+
+        const cmd = e.data?.command;
+        if (cmd === 'getinfo') {
+            return reply({
+                width: app.width,
+                height: app.height,
+            }, sender);
+        }
+        if (cmd === 'clear') {
+            ctx.clearRect(0, 0, app.width, app.height);
+            return reply({ success: true }, sender);
+        }
+        if (cmd === 'get_data') {
+            const data = app.toDataURL();
+            return reply(data, sender);
+        }
+        if (cmd === 'draw_image') {
+            try {
+                const data = e.data?.data?.url;
+                const img = new Image();
+                img.src = data;
+                img.onload = () => {
+                    if (e.data?.data?.fit) {
+                        ctx.drawImage(img, 0, 0, app.width, app.height);
+                    }
+                    else {
+                        ctx.drawImage(img, 0, 0);
+                    }
+                }
+                img.onerror = (e) => {
+                    ctx.font = '20px Arial';
+                    ctx.fillStyle = 'red';
+                    ctx.fillText("图片导入失败：" + e?.message, 10, 30);   
+                };
+                return reply({ success: true }, sender);
+            }
+            catch (error) {
+                return reply({
+                    success: false,
+                    error: String(error)
+                }, sender);
+            }
+        }
+
+        const code = e.data?.code;
+        if (typeof code !== 'string') {
+            console.warn('[usercontent]', 'illegal message');
+            return;
+        }
+
+        evaluate(code, sender);
+    })
+
+    app.addEventListener('dragover', e => {
+        e.preventDefault();
+        ctx.font = '20px Arial';
+        ctx.fillStyle = 'red';
+        ctx.fillText("不允许向此处拖放，请将文件拖放到对话区域", 10, 30);
+    });
+    </script>
+
+</body>
+</html>
