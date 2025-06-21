@@ -32,17 +32,42 @@
         }, '*');
     }
 
+    let previous_timer_id = new Array();
+
+    function setTimeout() {
+        const id = globalThis.setTimeout.apply(globalThis, arguments)
+        previous_timer_id.push({
+            type: 'Timeout', id,
+        });
+        return id;
+    }
+    function setInterval() {
+        const id = globalThis.setInterval.apply(globalThis, arguments);
+        previous_timer_id.push({
+            type: 'Interval', id,
+        });
+        return id;
+    }
+
+    function clear_timers() {
+        for (const i of previous_timer_id) {
+            globalThis['clear' + i.type]?.(i.id);
+        }
+        previous_timer_id.length = 0;
+    }
+
     async function evaluate(code, sender) {
         let result;
         try {
-            const fn = new Function('ctx', 'canvas', `return new Promise((resolve, reject) => {
+            clear_timers();
+            const fn = new Function('ctx', 'canvas', 'setTimeout', 'setInterval', `return new Promise((resolve, reject) => {
                 ((async function UserContent() {
                     ${code}
                 })()).then(resolve).catch(reject);
             })`);
             result = {
                 success: true,
-                result: await fn(ctx, canvas),
+                result: String(await fn(ctx, canvas, setTimeout, setInterval)),
             };
         } catch (e) {
             result = {
@@ -69,7 +94,9 @@
             }, sender);
         }
         if (cmd === 'clear') {
+            ctx.reset();
             ctx.clearRect(0, 0, app.width, app.height);
+            clear_timers();
             return reply({ success: true }, sender);
         }
         if (cmd === 'get_data') {
@@ -78,6 +105,8 @@
         }
         if (cmd === 'draw_image') {
             try {
+                clear_timers();
+
                 const data = e.data?.data?.url;
                 const img = new Image();
                 img.src = data;

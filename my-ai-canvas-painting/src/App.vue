@@ -12,7 +12,7 @@
             <resizable-widget ref="codeShowingDialog" style="width: 60%; height: 60%;">
                 <div slot="widget-caption">代码</div>
                 <div class="myCodeDialog" open>
-                    <textarea autocomplete="off" v-model="currentCodeShowToUser"></textarea>
+                    <textarea autocomplete="off" v-model="currentCodeShowToUser" style="border: 0;"></textarea>
                     <button @click="codeShowingDialog.close()" class="MyButton">关闭</button>
                 </div>
             </resizable-widget>
@@ -20,23 +20,33 @@
                 <textarea autocomplete="off" v-model="prompt"></textarea>
                 <button @click="promptDialog.close()" class="MyButton">关闭</button>
             </dialog>
+            <dialog ref="userParseSystemPromptDialog" class="myCodeDialog">
+                <textarea autocomplete="off" :value="parsed_content2" readonly></textarea>
+                <button @click="userParseSystemPromptDialog.close()" class="MyButton">关闭</button>
+            </dialog>
             <resizable-widget ref="cmdExecuteDialog" style="width: 50%; height: 50%; --padding: 10px;">
                 <div slot="widget-caption">绘制</div>
                 <div style="display: flex; flex-direction: column; width: 100%; height: 100%;">
-                    <textarea autocomplete="off" v-model="cmdToExecute" style="flex: 1; border: 0; margin-bottom: 0.5em; resize: none; box-sizing: border-box; font-size: 1rem;"></textarea>
+                    <textarea autocomplete="off" v-model="cmdToExecute"
+                        style="flex: 1; border: 0; margin-bottom: 0.5em; resize: none; box-sizing: border-box; font-size: 1rem;"></textarea>
                     <button @click="(userCmdExec(), cmdExecuteDialog.close())" class="MyButton">执行</button>
                 </div>
             </resizable-widget>
             <dialog ref="moreOptDialog" class="myCodeDialog" style="width: 300px; height: min-content;">
                 <button class="MyButton" @click="promptDialog.showModal()">修改系统提示</button>
+                <button class="MyButton"
+                    @click="((userParseSystemPromptDialog.showModal()), (parsed_content().then(v => parsed_content2 = v)))">解析系统提示</button>
                 <button class="MyButton" @click="export_context">导出上下文</button>
                 <button class="MyButton" @click="import_image">导入图片</button>
                 <button class="MyButton" @click="reload_canvas">重新加载画布</button>
-                <button class="MyButton" @click="overlayMode = (1 - overlayMode)">{{ overlayMode ? '叠加' : '覆盖' }}模式</button>
+                <button class="MyButton" @click="overlayMode = (1 - overlayMode)">{{ overlayMode ? '叠加' : '覆盖'
+                    }}模式</button>
                 <hr>
                 <label><input type="checkbox" autocomplete="off" v-model="auto_scroll">&nbsp;AI 聊天：自动滚动</label>
+                <label><input type="checkbox" autocomplete="off" v-model="oneline_mode">&nbsp;AI 聊天：单行模式（逐步执行代码）</label>
                 <label><input type="checkbox" autocomplete="off" v-model="fit_img_to_canvas">&nbsp;图片导入：适应画布大小</label>
-                <label><input type="checkbox" autocomplete="off" v-model="check_for_prompt_update">&nbsp;系统：检查提示词更新</label>
+                <label><input type="checkbox" autocomplete="off"
+                        v-model="check_for_prompt_update">&nbsp;系统：检查提示词更新</label>
                 <hr>
                 <button @click="moreOptDialog.close()" class="MyButton">关闭</button>
             </dialog>
@@ -61,44 +71,51 @@
                 <div style="padding: 10px;">
                     <a href="javascript:" @click.prevent="manageKey = true">设置 API Key</a>
                     <span>&nbsp;|&nbsp;</span>
-                    <a href="javascript:" @click.prevent="((context.length = 0), (currentFailures.length = 0))">清空上下文</a>
+                    <a href="javascript:"
+                        @click.prevent="((context.length = 0), (currentFailures.length = 0))">清空上下文</a>
                     <span>&nbsp;|&nbsp;</span>
                     <label><input type="checkbox" autocomplete="off" v-model="deep_think">&nbsp;深度思考</label>
                 </div>
 
                 <div class="message-area" @wheel.passive="userScrolled = true" @pointerdown="userScrolled = true"
                     ref="msgArea">
-                    <div v-for="(item, index) in context" :key="index" :class="['message-bubble', 'role-' + item.role]">
+                    <div v-for="(item, index) in context" :key="index" class="message-bubble" :data-role="item.role"
+                        @draw="drawCmd(item, $event)" @viewsource="viewCmdSource(item, $event)">
                         <div class="message-header">
                             <span class="message-role">{{ item.role === 'user' ? '用户' : 'AI' }}</span>
                             <span class="message-time">{{ formatTime(item.timestamp) }}</span>
                         </div>
-                        <div v-if="!!item.reasoning_content" class="message-reasoning-content">{{ item.reasoning_content }}</div>
-                        <div class="message-content">{{ item.content }}</div>
-                        <div v-if="item.commands" style="margin-top: 0.5em;">
-                            <a href="javascript:" @click="redraw_content(item.commands)">重绘</a>
-                        </div>
+                        <div v-if="!!item.reasoning_content" class="message-reasoning-content"
+                            v-text="item.reasoning_content"></div>
+                        <div class="message-content" v-for="(line, index) in render_lines(item.content)" :key="index"
+                            v-html="p(line)"></div>
                     </div>
 
-                    <div v-if="context.length === 0" style="display: flex; flex-direction: column; align-items: center; word-break: break-all; text-align: center;">
+                    <div v-if="context.length === 0"
+                        style="display: flex; flex-direction: column; align-items: center; word-break: break-all; text-align: center;">
                         <div style="font-weight: bold; font-size: 1.5rem; margin-bottom: 0.5em;">上下文是空的！</div>
-                        <div>可以<a href="javascript:" @click="hiddenFileCtxImportField.click()">导入上下文</a>，也可以直接<br>拖拽上下文文件到此。</div>
+                        <div>可以<a href="javascript:"
+                                @click="hiddenFileCtxImportField.click()">导入上下文</a>，也可以直接<br>拖拽上下文文件到此。</div>
                     </div>
 
-                    <div v-if="currentResponse.reasoning_content || currentResponse.content"
-                        class="message-bubble role-assistant">
+                    <div v-if="currentResponse.reasoning_content || currentResponse.content" class="message-bubble"
+                        data-role="assistant"
+                        @draw="drawCmd(currentResponse, $event)" 
+                        @viewsource="viewCmdSource(currentResponse, $event)"
+                    >
                         <div class="message-header">
                             <span class="message-role">AI</span>
                             <span class="message-time">{{ formatTime(Date.now()) }}</span>
                         </div>
-                        <div v-if="currentResponse.reasoning_content" class="message-reasoning-content">{{
-                            currentResponse.reasoning_content }}</div>
-                        <div class="message-content">{{ currentResponse.content }}</div>
+                        <div v-if="currentResponse.reasoning_content" class="message-reasoning-content"
+                            v-text="currentResponse.reasoning_content"></div>
+                        <div class="message-content" v-for="(line, index) in render_lines(currentResponse.content)"
+                            :key="index" v-html="p(line)"></div>
                     </div>
-                    
+
                     <div v-if="currentFailures.length > 0" class="message-bubble role-error">
                         <div class="message-header">
-                            <span class="message-role">错误</span>
+                            <span class="message-role">错误 ({{ currentFailures.length }})</span>
                             <span class="message-time">{{ formatTime(Date.now()) }}</span>
                         </div>
                         <div class="message-content">
@@ -106,7 +123,11 @@
                                 {{ index + 1 }}. {{ failure }}
                             </div>
                         </div>
-                        <div style="margin-top: 0.5em;"><a href="javascript:" @click="aiFixErrors" aria-label="通过 AI 修复代码中的错误。">AI 修复</a></div>
+                        <div style="margin-top: 0.5em;">
+                            <a href="javascript:" @click="aiFixErrors" aria-label="通过 AI 修复代码中的错误。">AI 修复</a>
+                            <span>&nbsp;&nbsp;</span>
+                            <a href="javascript:" @click="currentFailures.length = 0" aria-label="清除错误列表。">清除</a>
+                        </div>
                     </div>
                 </div>
 
@@ -125,8 +146,14 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { toast } from 'vue3-toastify';
+import { parse_template_string } from './parse_template_string';
+import DOMPurify from 'dompurify';
 
 const appRoot = ref(null);
+const p = (html) => DOMPurify.sanitize(html, {
+    ADD_TAGS: ["x-canvas-api-draw-im-command"],
+    ALLOW_DATA_ATTR: true,
+});
 
 onMounted(async () => {
     appRoot.value.style.width = window.innerWidth + 'px';
@@ -138,6 +165,7 @@ onMounted(async () => {
     auto_scroll.value = localStorage.getItem('my-ai-canvas-painting::auto_scroll') === 'true';
     fit_img_to_canvas.value = localStorage.getItem('my-ai-canvas-painting::fit_img_to_canvas') === 'true';
     check_for_prompt_update.value = localStorage.getItem('my-ai-canvas-painting::check_for_prompt_update') !== 'false';
+    oneline_mode.value = localStorage.getItem('my-ai-canvas-painting::oneline_mode') !== 'false';
     prompt.value = localStorage.getItem('my-ai-canvas-painting::prompt') || await (fetch('./prompt.txt', {
         cache: 'no-store',
     }).then(r => r.text()));
@@ -212,11 +240,14 @@ const codeShowingDialog = ref(null);
 const promptDialog = ref(null);
 const moreOptDialog = ref(null); 
 const cmdExecuteDialog = ref(null);
+const userParseSystemPromptDialog = ref(null);
 const cmdToExecute = ref('');
 const hiddenFileCtxImportField = ref(null);
 const auto_scroll = ref(false);
 const fit_img_to_canvas = ref(false);
 const check_for_prompt_update = ref(false);
+const oneline_mode = ref(false);
+const parsed_content2 = ref('');
 const dl = (data, filext = '.txt', filename = `AI 绘图 - ${(new Date()).toLocaleString()}`) => {
     let url = data;
     if (typeof data === 'object' && data instanceof Blob) {
@@ -263,7 +294,8 @@ const import_context = async (src, e) => {
         if (file) e.preventDefault();
     }
     if (!file) return;
-    if (file?.name?.endsWith?.('.png') || file?.name?.endsWith?.('.jpg') || file?.name?.endsWith?.('.jpeg') || file?.name?.endsWith?.('.webp')) {
+    const filename = (file?.name || '').toLowerCase();
+    if (filename.endsWith('.png') || filename.endsWith('.jpg') || filename.endsWith('.jpeg') || filename.endsWith('.webp')) {
         // 绘制到 canvas 上
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -282,7 +314,7 @@ const import_context = async (src, e) => {
         }
         return;
     }
-    if (file?.name?.endsWith?.('.json')) try {
+    if (filename?.endsWith?.('.json')) try {
         // 导入对话数据
         if (context.value.length) throw '当前对话数据不为空，无法导入；请先清空对话数据';
         const ctx = await file.text();
@@ -313,15 +345,6 @@ const userCmdExec = () => {
 const handleEnterDown = e => {
     if (!e.shiftKey) { e.preventDefault(); send(); }
 };
-const redraw_content = async (commands) => {
-    try {
-        await execCommandInContext('clear');
-        await execCommandInContext(commands, 'code');
-        toast.success('已经重绘', { delay: 500 });
-    } catch (e) {
-        toast.error(e);
-    }
-}
 watch(() => prompt.value, (newValue) => {
     localStorage.setItem('my-ai-canvas-painting::prompt', newValue);
 });
@@ -333,6 +356,9 @@ watch(() => fit_img_to_canvas.value, (newValue) => {
 });
 watch(() => check_for_prompt_update.value, (newValue) => {
     localStorage.setItem('my-ai-canvas-painting::check_for_prompt_update', newValue);
+});
+watch(() => oneline_mode.value, (newValue) => {
+    localStorage.setItem('my-ai-canvas-painting::oneline_mode', newValue);
 });
 
 async function execCommandInContext(cmd, type='command', data=null) {
@@ -358,15 +384,20 @@ async function execCommandInContext(cmd, type='command', data=null) {
     });
 }
 
-async function constructDeepSeekContext() {
+const parsed_content = async () => {
     const info = await execCommandInContext('getinfo');
+    return parse_template_string(prompt.value, {
+        oneline: !!oneline_mode.value,
+        canvas_width: info.width,
+        canvas_height: info.height,
+        current_time: (new Date()).toISOString(),
+    })
+};
+async function constructDeepSeekContext() {
+    const content = await parsed_content();
     const messages = [{
         role: 'system',
-        content: prompt.value.replace(/(%canvas_width|%canvas_height|%current_time)/g, (m) => {
-            if (m === '%canvas_width') return info.width;
-            if (m === '%canvas_height') return info.height;
-            if (m === '%current_time') return (new Date()).toISOString();
-        }),
+        content,
     }];
     for (const i of context.value) {
         if (i.role === 'user') {
@@ -374,11 +405,13 @@ async function constructDeepSeekContext() {
                 role: 'user',
                 content: i.content,
             });
-        } else {
+        } else if (i.role === 'assistant') {
             messages.push({
                 role: 'assistant',
-                content: i.content,
+                content: i.raw_content || i.content,
             });
+        } else {
+            toast.warning('数据异常：' + i.role, { delay: 250 });
         }
     }
 
@@ -390,8 +423,7 @@ async function constructDeepSeekContext() {
     }
 }
 
-const currentResponse = ref({ reasoning_content: '', content: '' });
-const currentResponseContent = ref('');
+const currentResponse = ref({ id: '', reasoning_content: '', content: '', raw_content: '', nextCmd: 0, commands: {} });
 const currentCode = ref('');
 const currentFailures = ref([]);
 const isGeneratingResponse = ref(false);
@@ -401,41 +433,49 @@ const currentCodeShowToUser = computed({ get: () => currentCode.value, set: () =
 
 function parse() {
     // 功能：解析网络请求
-    if (!currentResponseContent.value) return;
+    if (!currentResponse.value.content) return;
 
     // 首先，检查响应中是否有我们要的```image代码块
-    const imageCodeBlock = currentResponseContent.value.indexOf("```image");
+    const imageCodeBlock = currentResponse.value.content.indexOf("```image");
     if (-1 === imageCodeBlock) return;
 
     // 然后，检查是否是一个完整的响应（含有 ``` 结束符）或者部分完整的响应（在 ```image 后面含有至少一个 \n ）
-    const endCodeBlock = currentResponseContent.value.indexOf("```", imageCodeBlock + 9);
-    const lineBreak = currentResponseContent.value.indexOf("\n", imageCodeBlock + 9);
+    const endCodeBlock = currentResponse.value.content.indexOf("```", imageCodeBlock + 9);
+    const lineBreak = currentResponse.value.content.indexOf("\n", imageCodeBlock + 9);
 
     if (-1 === endCodeBlock && -1 === lineBreak) return;
 
     // 提取字符串。
     let cmd;
     if (endCodeBlock !== -1) {
-        cmd = currentResponseContent.value.substring(imageCodeBlock + 9, endCodeBlock);
+        cmd = currentResponse.value.content.substring(imageCodeBlock + 9, endCodeBlock);
     } else {
-        cmd = currentResponseContent.value.substring(imageCodeBlock + 9, lineBreak);
+        if (!oneline_mode.value) return; // 等待完整响应
+        cmd = currentResponse.value.content.substring(imageCodeBlock + 9, lineBreak);
     }
-    if (!cmd) return; // 提取出来的是空内容，说明是不完整的响应，不处理。
+    if (!cmd && endCodeBlock === -1) return; // 提取出来的是空内容，说明是不完整的响应，不处理。
     currentCode.value += cmd + '\n';
+    // console.log('command: ', cmd);
 
     // 移除原来的字符串中这一部分，防止重复处理。
     const removalEnd = endCodeBlock !== -1 ? endCodeBlock + 3 : lineBreak + 1;
     if (endCodeBlock !== -1) {
         // 完整的响应，移除 ``` 结束符。
-        console.log('endCodeBlock:', endCodeBlock);
-        currentResponseContent.value = currentResponseContent.value.substring(0, imageCodeBlock) + currentResponseContent.value.substring(removalEnd);
+        // console.log('full response', currentResponse.value.content);
+        const cmdIndex = ++currentResponse.value.nextCmd;
+        currentResponse.value.commands[cmdIndex] = currentCode.value;
+        currentResponse.value.content =
+            currentResponse.value.content.substring(0, imageCodeBlock) +
+            '<x-canvas-api-draw-im-command data-entity-id=' + currentResponse.value.id + ' data-cmd-index=' + cmdIndex + '></x-canvas-api-draw-im-command>' +
+            currentResponse.value.content.substring(removalEnd);
     } else {
         // 保留 ```image 部分，移除 \n 后面的内容。
-        currentResponseContent.value = currentResponseContent.value.substring(0, imageCodeBlock + 9) + currentResponseContent.value.substring(removalEnd);
+        // console.log('partial response', currentResponse.value.content);
+        currentResponse.value.content = currentResponse.value.content.substring(0, imageCodeBlock + 9) + currentResponse.value.content.substring(removalEnd);
     }
 
     // 执行命令
-    execCommandInContext(cmd, 'code').then(({ success, error, stack }) => {
+    if (cmd) execCommandInContext(cmd, 'code').then(({ success, error, stack }) => {
         if (!success) {
             currentFailures.value.push(stack || error);
         }
@@ -457,14 +497,14 @@ async function send() {
     
     isGeneratingResponse.value = true;
     abortController.value = new AbortController();
-    currentResponse.value = { reasoning_content: '', content: '' };
     context.value.push({
         role: 'user',
         content: inputMsg.value,
         timestamp: Date.now()
     });
     inputMsg.value = '';
-    currentCode.value = currentResponseContent.value = '';
+    currentCode.value = '';
+    currentResponse.value.id = crypto.randomUUID();
     currentFailures.value.length = 0;
     userScrolled.value = false;
 
@@ -480,6 +520,7 @@ async function send() {
         let isFirstChunk = true;
         
         await fetchEventSource('https://api.deepseek.com/chat/completions', {
+            openWhenHidden: true,
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -501,7 +542,7 @@ async function send() {
                     }
                     if (data.choices[0].delta.content) {
                         currentResponse.value.content += data.choices[0].delta.content;
-                        currentResponseContent.value += data.choices[0].delta.content;
+                        currentResponse.value.raw_content += data.choices[0].delta.content;
                     }
                     if (data.choices[0].delta.content) parse();
                     if (!userScrolled.value || auto_scroll.value) {
@@ -516,14 +557,18 @@ async function send() {
         });
 
         // 完成后，把解析后的字符串添加到上下文。
+        currentCode.value = currentResponse.value.commands?.[currentResponse.value.nextCmd] || '';
         context.value.push({
             role: 'assistant',
+            id: currentResponse.value.id,
             content: currentResponse.value.content,
             reasoning_content: currentResponse.value.reasoning_content,
+            raw_content: currentResponse.value.raw_content,
             timestamp: Date.now(),
             commands: currentCode.value,
+            cmd_list: currentResponse.value.commands,
         });
-        currentResponse.value = { reasoning_content: '', content: '' };
+        currentResponse.value = { id: '', reasoning_content: '', content: '', raw_content: '', nextCmd: 0, commands: {} };
         await new Promise(nextTick);
         if (!userScrolled.value) {
             msgArea.value.scrollTop = msgArea.value.scrollHeight;
@@ -553,6 +598,30 @@ async function aiFixErrors() {
     send();
     await new Promise(nextTick);
     inputMsg.value = oldInputMsg;
+}
+function render_lines(text) {
+    return text.split('\n');
+}
+async function drawCmd(data, { detail: cmdIndex }) {
+    const cmd = (data.cmd_list || data.commands)[cmdIndex];
+    if (cmd) {
+        currentCode.value = cmd;
+        try {
+            await execCommandInContext('clear');
+            const { success, error, stack } = await execCommandInContext(cmd, 'code');
+            if (!success) {
+                currentFailures.value.push(stack || error);
+            }
+        } catch (e) {
+            toast.error('命令执行失败: ' + e);
+        }
+    }
+}
+function viewCmdSource(data, { detail: cmdIndex }) {
+    const cmd = (data.cmd_list || data.commands)[cmdIndex];
+
+    currentCode.value = cmd;
+    codeShowingDialog.value.open = true;
 }
 </script>
 
@@ -710,7 +779,7 @@ textarea {
     font-size: 0.8rem;
     color: #666;
 }
-.role-user .message-header {
+[data-role="user"] .message-header {
     color: #fff;
 }
 
@@ -723,16 +792,26 @@ textarea {
     margin-left: 0.5em;
 }
 
-.role-user {
+.message-bubble[data-role="user"] {
     align-self: flex-end;
     background: #4a90e2;
     color: white;
 }
 
-.role-assistant {
+.message-bubble[data-role="assistant"] {
     align-self: flex-start;
     background: #f0f0f0;
     color: #333;
+}
+
+.message-bubble:not([data-role="assistant"]):not([data-role="user"]):not(.role-error) {
+    align-self: flex-start;
+    border: 1px solid #dd0000;
+}
+.message-bubble:not([data-role="assistant"]):not([data-role="user"]):not(.role-error) .message-role::after {
+    content: "(数据异常)";
+    margin-left: 0.5em;
+    color: red;
 }
 
 .message-reasoning-content {

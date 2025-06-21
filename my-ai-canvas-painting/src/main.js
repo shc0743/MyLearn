@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 import 'resizable-widget'
-import { toast } from 'vue3-toastify'
+import './custom-render-and-im.js'
 import 'vue3-toastify/dist/index.css'
 
 const app = createApp(App)
