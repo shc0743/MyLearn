@@ -34,7 +34,9 @@
                 <button class="MyButton" @click="reload_canvas">重新加载画布</button>
                 <button class="MyButton" @click="overlayMode = (1 - overlayMode)">{{ overlayMode ? '叠加' : '覆盖' }}模式</button>
                 <hr>
+                <label><input type="checkbox" autocomplete="off" v-model="auto_scroll">&nbsp;AI 聊天：自动滚动</label>
                 <label><input type="checkbox" autocomplete="off" v-model="fit_img_to_canvas">&nbsp;图片导入：适应画布大小</label>
+                <label><input type="checkbox" autocomplete="off" v-model="check_for_prompt_update">&nbsp;系统：检查提示词更新</label>
                 <hr>
                 <button @click="moreOptDialog.close()" class="MyButton">关闭</button>
             </dialog>
@@ -71,9 +73,11 @@
                             <span class="message-role">{{ item.role === 'user' ? '用户' : 'AI' }}</span>
                             <span class="message-time">{{ formatTime(item.timestamp) }}</span>
                         </div>
-                        <div v-if="!!item.reasoning_content" class="message-reasoning-content">{{ item.reasoning_content
-                            }}</div>
+                        <div v-if="!!item.reasoning_content" class="message-reasoning-content">{{ item.reasoning_content }}</div>
                         <div class="message-content">{{ item.content }}</div>
+                        <div v-if="item.commands" style="margin-top: 0.5em;">
+                            <a href="javascript:" @click="redraw_content(item.commands)">重绘</a>
+                        </div>
                     </div>
 
                     <div v-if="context.length === 0" style="display: flex; flex-direction: column; align-items: center; word-break: break-all; text-align: center;">
@@ -131,8 +135,45 @@ onMounted(async () => {
     if (!apikey.value) {
         manageKey.value = true;
     }
-    prompt.value = localStorage.getItem('my-ai-canvas-painting::prompt') || await(fetch('./prompt.txt').then(r => r.text()));
+    auto_scroll.value = localStorage.getItem('my-ai-canvas-painting::auto_scroll') === 'true';
+    fit_img_to_canvas.value = localStorage.getItem('my-ai-canvas-painting::fit_img_to_canvas') === 'true';
+    check_for_prompt_update.value = localStorage.getItem('my-ai-canvas-painting::check_for_prompt_update') !== 'false';
+    prompt.value = localStorage.getItem('my-ai-canvas-painting::prompt') || await (fetch('./prompt.txt', {
+        cache: 'no-store',
+    }).then(r => r.text()));
     import('@microsoft/fetch-event-source') // 预加载模块以提高性能
+
+    // 检查提示词是否更新
+    if (check_for_prompt_update.value) {
+        const promptVersion = +localStorage.getItem('my-ai-canvas-painting::prompt_version');
+        const remote_prompt_version = isNaN(promptVersion) ? 0 : (+(await (await fetch('./prompt_version.txt', {
+            cache: 'no-store',
+        })).text())); // 节省流量
+        if (isNaN(promptVersion) || promptVersion < remote_prompt_version) {
+            let userWantsToUpdate = false;
+            toast.info('系统提示词有更新！点击进行更新。（如果您修改了系统提示词，更新后修改将被覆盖；这种情况下请点击“x”取消更新）', {
+                autoClose: false,
+                closeButton: true,
+                onClose: async () => {
+                    if (!userWantsToUpdate) toast.info('您可以在 “更多选项” 中禁用更新检查。', {
+                        onClick() {
+                            moreOptDialog.value.showModal();
+                        }
+                    });
+                },
+                onClick: () => {
+                    userWantsToUpdate = true;
+                    queueMicrotask(async () => {
+                        prompt.value = await (await fetch('./prompt.txt', {
+                            cache: 'no-store',
+                        })).text();
+                        localStorage.setItem('my-ai-canvas-painting::prompt_version', remote_prompt_version);
+                        toast.success('提示词已更新。');
+                    });
+                }
+            })
+        }
+    }
 })
 
 const myFrame = ref(null);
@@ -173,7 +214,9 @@ const moreOptDialog = ref(null);
 const cmdExecuteDialog = ref(null);
 const cmdToExecute = ref('');
 const hiddenFileCtxImportField = ref(null);
+const auto_scroll = ref(false);
 const fit_img_to_canvas = ref(false);
+const check_for_prompt_update = ref(false);
 const dl = (data, filext = '.txt', filename = `AI 绘图 - ${(new Date()).toLocaleString()}`) => {
     let url = data;
     if (typeof data === 'object' && data instanceof Blob) {
@@ -270,8 +313,27 @@ const userCmdExec = () => {
 const handleEnterDown = e => {
     if (!e.shiftKey) { e.preventDefault(); send(); }
 };
+const redraw_content = async (commands) => {
+    try {
+        toast.success('正在绘制...', { delay: 500 });
+        await execCommandInContext('clear');
+        await execCommandInContext(commands, 'code');
+        toast.success('已经重绘', { delay: 500 });
+    } catch (e) {
+        toast.error(e);
+    }
+}
 watch(() => prompt.value, (newValue) => {
     localStorage.setItem('my-ai-canvas-painting::prompt', newValue);
+});
+watch(() => auto_scroll.value, (newValue) => {
+    localStorage.setItem('my-ai-canvas-painting::auto_scroll', newValue);
+});
+watch(() => fit_img_to_canvas.value, (newValue) => {
+    localStorage.setItem('my-ai-canvas-painting::fit_img_to_canvas', newValue);
+});
+watch(() => check_for_prompt_update.value, (newValue) => {
+    localStorage.setItem('my-ai-canvas-painting::check_for_prompt_update', newValue);
 });
 
 async function execCommandInContext(cmd, type='command', data=null) {
@@ -443,7 +505,7 @@ async function send() {
                         currentResponseContent.value += data.choices[0].delta.content;
                     }
                     if (data.choices[0].delta.content) parse();
-                    if (!userScrolled.value) {
+                    if (!userScrolled.value || auto_scroll.value) {
                         msgArea.value.scrollTop = msgArea.value.scrollHeight;
                     }
                 } catch (e) {
@@ -459,7 +521,8 @@ async function send() {
             role: 'assistant',
             content: currentResponse.value.content,
             reasoning_content: currentResponse.value.reasoning_content,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            commands: currentCode.value,
         });
         currentResponse.value = { reasoning_content: '', content: '' };
         await new Promise(nextTick);
