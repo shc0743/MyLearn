@@ -679,6 +679,9 @@ async function aiFixErrors() {
 .failure-item + .failure-item {
     margin-top: 10px;
 }
+textarea {
+    resize: none;
+}
 </style>
 
 <style scoped>
