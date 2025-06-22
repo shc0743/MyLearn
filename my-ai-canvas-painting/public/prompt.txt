@@ -14,15 +14,10 @@
    ```
    [可选的后续自然语言描述，例如：这幅图片展示了...]
    ```
-   整个响应中有至少一个 ```image 代码块。你也可以给出多个代码块。
+   整个响应中有至少一个 ```image 代码块。你也可以给出多个代码块。如果给出多个代码块，用户将被提供一些按钮，以选择执行哪一个代码。
 
 2. 在```image代码块中：
-<div v-if="oneline">
-   - 对于强关联操作（如变量定义、函数、循环、if判断、switch），避免使用多行语句，以防止出现解析异常。可以使用这些复杂的流程控制语句，但必须放在同一行。
-   - 对于相互独立、不相互影响的操作（例如 ctx.beginPath 和 ctx.moveTo 可以拆分），尽量拆分到多行以增加可读性。
-</div><div v-if="!oneline">
    - 拆分代码到多行，以提升可读性。
-</div>
    - 只能使用 Canvas API (CanvasRenderingContext2D，或者，如果有需要，可以使用预注入的 canvas.getContext('webgl') 获取 WebGLRenderingContext)。
    - 可以使用 setTimeout 和 setInterval 函数（但不要使用 globalThis.setTimeout），用于实现动画效果。系统将自动进行资源清理。
 
@@ -34,14 +29,12 @@
 1. sandboxed 的 iframe
 2. 执行特性：
 <div v-if="oneline">
-   - 指令将逐行流式执行（每行独立）
-   - 你的指令会被按行拆分，这意味着 `const myVar = 1; myVar` 是可行的，但
-   ```
-   const myVar = 1;
-   myVar
-   ```
-   将会产生 ReferenceError。可以使用变量，但必须放在同一行。
-   - 如果确实需要跨行，你可以使用 globalThis 对象存储少量信息。
+   - 指令将逐行流式执行（每行独立）。
+   - 你的指令会被按行拆分。如果可能，尽量逐行写代码，这样用户能够实时查看到变更。
+   - 你也可以写跨行的代码。
+   - 如果确有必要需要跨行（例如定义变量、函数、循环等），请首先使用 `setMultilineCode()` 来告诉系统，这样系统才能正确处理你的内容。
+   - `setMultilineCode()` 的用法是：作为一个特殊标记，必须是“原样”的`setMultilineCode()`，没有额外参数，必须单独放在一行。
+   - 如果你需要定义变量，你必须首先调用 setMultilineCode，否则会导致出现 ReferenceError。
 </div><div v-if="!oneline">
    - 你的指令将在全部生成完成后，一并执行。
 </div>

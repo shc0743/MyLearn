@@ -44,6 +44,7 @@
                 <hr>
                 <label><input type="checkbox" autocomplete="off" v-model="auto_scroll">&nbsp;AI 聊天：自动滚动</label>
                 <label><input type="checkbox" autocomplete="off" v-model="oneline_mode">&nbsp;AI 聊天：单行模式（逐步执行代码）</label>
+                <label><input type="checkbox" autocomplete="off" v-model="try_autorerun">&nbsp;AI 聊天：自动重试</label>
                 <label><input type="checkbox" autocomplete="off" v-model="fit_img_to_canvas">&nbsp;图片导入：适应画布大小</label>
                 <label><input type="checkbox" autocomplete="off"
                         v-model="check_for_prompt_update">&nbsp;系统：检查提示词更新</label>
@@ -80,7 +81,7 @@
                 <div class="message-area" @wheel.passive="userScrolled = true" @pointerdown="userScrolled = true"
                     ref="msgArea">
                     <div v-for="(item, index) in context" :key="index" class="message-bubble" :data-role="item.role"
-                        @draw="drawCmd(item, $event)" @viewsource="viewCmdSource(item, $event)">
+                        @draw="drawCmd(item, $event.detail)" @viewsource="viewCmdSource(item, $event)">
                         <div class="message-header">
                             <span class="message-role">{{ item.role === 'user' ? '用户' : 'AI' }}</span>
                             <span class="message-time">{{ formatTime(item.timestamp) }}</span>
@@ -100,7 +101,7 @@
 
                     <div v-if="currentResponse.reasoning_content || currentResponse.content" class="message-bubble"
                         data-role="assistant"
-                        @draw="drawCmd(currentResponse, $event)" 
+                        @draw="drawCmd(currentResponse, $event.detail)" 
                         @viewsource="viewCmdSource(currentResponse, $event)"
                     >
                         <div class="message-header">
@@ -123,10 +124,10 @@
                                 {{ index + 1 }}. {{ failure }}
                             </div>
                         </div>
-                        <div style="margin-top: 0.5em;">
-                            <a href="javascript:" @click="aiFixErrors" aria-label="通过 AI 修复代码中的错误。">AI 修复</a>
-                            <span>&nbsp;&nbsp;</span>
-                            <a href="javascript:" @click="currentFailures.length = 0" aria-label="清除错误列表。">清除</a>
+                        <div style="margin-top: 0.5em;" class="my-links">
+                            <a href="javascript:" @click="rerunErrors" title="尝试重新运行对应代码，观察错误是否消失。" v-if="!isGeneratingResponse && currentFailedIndex">重新运行</a>
+                            <a href="javascript:" @click="aiFixErrors" title="通过 AI 修复代码中的错误。" v-if="!isGeneratingResponse">AI修复</a>
+                            <a href="javascript:" @click="((currentFailures.length = 0), (currentFailedIndex = 0))" title="清除错误列表。">清除</a>
                         </div>
                     </div>
                 </div>
@@ -162,13 +163,16 @@ onMounted(async () => {
     if (!apikey.value) {
         manageKey.value = true;
     }
-    auto_scroll.value = localStorage.getItem('my-ai-canvas-painting::auto_scroll') === 'true';
-    fit_img_to_canvas.value = localStorage.getItem('my-ai-canvas-painting::fit_img_to_canvas') === 'true';
-    check_for_prompt_update.value = localStorage.getItem('my-ai-canvas-painting::check_for_prompt_update') !== 'false';
-    oneline_mode.value = localStorage.getItem('my-ai-canvas-painting::oneline_mode') !== 'false';
+    doLoad(auto_scroll, 'auto_scroll', false);
+    doLoad(fit_img_to_canvas, 'fit_img_to_canvas', false);
+    doLoad(check_for_prompt_update, 'check_for_prompt_update', true);
+    doLoad(oneline_mode, 'oneline_mode', true);
+    doLoad(overlayMode, 'overlayMode', 0);
+    doLoad(try_autorerun, 'try_autorerun', true);
     prompt.value = localStorage.getItem('my-ai-canvas-painting::prompt') || await (fetch('./prompt.txt', {
         cache: 'no-store',
     }).then(r => r.text()));
+
     import('@microsoft/fetch-event-source') // 预加载模块以提高性能
 
     // 检查提示词是否更新
@@ -247,7 +251,9 @@ const auto_scroll = ref(false);
 const fit_img_to_canvas = ref(false);
 const check_for_prompt_update = ref(false);
 const oneline_mode = ref(false);
+const try_autorerun = ref(false);
 const parsed_content2 = ref('');
+const temporarilyMultipleLineExecution = ref(false);
 const dl = (data, filext = '.txt', filename = `AI 绘图 - ${(new Date()).toLocaleString()}`) => {
     let url = data;
     if (typeof data === 'object' && data instanceof Blob) {
@@ -345,21 +351,28 @@ const userCmdExec = () => {
 const handleEnterDown = e => {
     if (!e.shiftKey) { e.preventDefault(); send(); }
 };
-watch(() => prompt.value, (newValue) => {
-    localStorage.setItem('my-ai-canvas-painting::prompt', newValue);
-});
-watch(() => auto_scroll.value, (newValue) => {
-    localStorage.setItem('my-ai-canvas-painting::auto_scroll', newValue);
-});
-watch(() => fit_img_to_canvas.value, (newValue) => {
-    localStorage.setItem('my-ai-canvas-painting::fit_img_to_canvas', newValue);
-});
-watch(() => check_for_prompt_update.value, (newValue) => {
-    localStorage.setItem('my-ai-canvas-painting::check_for_prompt_update', newValue);
-});
-watch(() => oneline_mode.value, (newValue) => {
-    localStorage.setItem('my-ai-canvas-painting::oneline_mode', newValue);
-});
+const doWatch = (object, object_str) => {
+    watch(() => object.value, (newValue) => {
+        localStorage.setItem('my-ai-canvas-painting::' + object_str, newValue);
+    });
+};
+const doLoad = (object, object_str, default_Value = false) => {
+    const value = localStorage.getItem('my-ai-canvas-painting::' + object_str);
+    if (value == null) {
+        object.value = default_Value;
+    } else {
+        object.value = (value === 'true') ? true : (value === 'false') ? false : (
+            Number.isNaN(+value) ? value : +value
+        );
+    }
+}
+doWatch(prompt, 'prompt');
+doWatch(auto_scroll, 'auto_scroll');
+doWatch(fit_img_to_canvas, 'fit_img_to_canvas');
+doWatch(check_for_prompt_update, 'check_for_prompt_update');
+doWatch(oneline_mode, 'oneline_mode');
+doWatch(try_autorerun, 'try_autorerun');
+doWatch(overlayMode, 'overlayMode');
 
 async function execCommandInContext(cmd, type='command', data=null) {
     const ctx = myFrame.value.contentWindow;
@@ -426,10 +439,12 @@ async function constructDeepSeekContext() {
 const currentResponse = ref({ id: '', reasoning_content: '', content: '', raw_content: '', nextCmd: 0, commands: {} });
 const currentCode = ref('');
 const currentFailures = ref([]);
+const currentFailedIndex = ref(0);
 const isGeneratingResponse = ref(false);
 const abortController = ref(null);
 const userScrolled = ref(false)
 const currentCodeShowToUser = computed({ get: () => currentCode.value, set: () => false });
+const previousIsFullResponse = ref(false)
 
 function parse() {
     // 功能：解析网络请求
@@ -450,34 +465,46 @@ function parse() {
     if (endCodeBlock !== -1) {
         cmd = currentResponse.value.content.substring(imageCodeBlock + 9, endCodeBlock);
     } else {
-        if (!oneline_mode.value) return; // 等待完整响应
+        if (!oneline_mode.value || temporarilyMultipleLineExecution.value) return; // 等待完整响应
         cmd = currentResponse.value.content.substring(imageCodeBlock + 9, lineBreak);
     }
     if (!cmd && endCodeBlock === -1) return; // 提取出来的是空内容，说明是不完整的响应，不处理。
+    if (previousIsFullResponse.value) {
+        currentCode.value = '';
+        previousIsFullResponse.value = false;
+    }
     currentCode.value += cmd + '\n';
     // console.log('command: ', cmd);
 
     // 移除原来的字符串中这一部分，防止重复处理。
     const removalEnd = endCodeBlock !== -1 ? endCodeBlock + 3 : lineBreak + 1;
+    let cmdIndex = currentResponse.value.nextCmd;
     if (endCodeBlock !== -1) {
         // 完整的响应，移除 ``` 结束符。
         // console.log('full response', currentResponse.value.content);
-        const cmdIndex = ++currentResponse.value.nextCmd;
+        cmdIndex = ++currentResponse.value.nextCmd;
         currentResponse.value.commands[cmdIndex] = currentCode.value;
         currentResponse.value.content =
             currentResponse.value.content.substring(0, imageCodeBlock) +
             '<x-canvas-api-draw-im-command data-entity-id=' + currentResponse.value.id + ' data-cmd-index=' + cmdIndex + '></x-canvas-api-draw-im-command>' +
             currentResponse.value.content.substring(removalEnd);
+        // currentCode.value = '';
+        previousIsFullResponse.value = true;
     } else {
         // 保留 ```image 部分，移除 \n 后面的内容。
         // console.log('partial response', currentResponse.value.content);
+        ++cmdIndex;
         currentResponse.value.content = currentResponse.value.content.substring(0, imageCodeBlock + 9) + currentResponse.value.content.substring(removalEnd);
     }
 
     // 执行命令
-    if (cmd) execCommandInContext(cmd, 'code').then(({ success, error, stack }) => {
+    if (cmd) execCommandInContext(cmd, 'code').then(({ success, error, stack, result }) => {
         if (!success) {
             currentFailures.value.push(stack || error);
+            currentFailedIndex.value = cmdIndex;
+        }
+        else if (result === 'multiline_flag') {
+            temporarilyMultipleLineExecution.value = true;
         }
     }).catch(e => {
         toast.error('命令执行失败: ' + e);
@@ -507,6 +534,7 @@ async function send() {
     currentResponse.value.id = crypto.randomUUID();
     currentFailures.value.length = 0;
     userScrolled.value = false;
+    temporarilyMultipleLineExecution.value = false;
 
     await new Promise(nextTick);
     msgArea.value.scrollTop = msgArea.value.scrollHeight;
@@ -570,9 +598,11 @@ async function send() {
         });
         currentResponse.value = { id: '', reasoning_content: '', content: '', raw_content: '', nextCmd: 0, commands: {} };
         await new Promise(nextTick);
-        if (!userScrolled.value) {
+        if (!userScrolled.value || auto_scroll.value) {
             msgArea.value.scrollTop = msgArea.value.scrollHeight;
         }
+        // 尝试自动修复问题
+        if (try_autorerun.value) nextTick(() => { rerunErrors(true) });
     } catch (e) {
         if (e?.name !== 'AbortError') {
             console.error('[app]', 'Error fetching SSE:', e);
@@ -582,6 +612,25 @@ async function send() {
         isGeneratingResponse.value = false;
         abortController.value = null;
     }
+}
+async function rerunErrors(silent = false) {
+    if (currentFailedIndex.value === 0) {
+        return false;
+    }
+    if (isGeneratingResponse.value) {
+        toast.info("暂不可用，请等待生成完成");
+        return;
+    }
+    const result = await drawCmd(context.value[context.value.length - 1], currentFailedIndex.value);
+    if (result) {
+        // 清除错误列表
+        currentFailures.value.length = 0;
+        currentFailedIndex.value = 0;
+        if (silent !== true) toast.success('重新运行: 成功');
+    } else {
+        if (silent !== true) toast.warning('重新运行: 失败');
+    }
+    return result;
 }
 async function aiFixErrors() {
     const errorsStr = currentFailures.value.join('\n\n');
@@ -593,6 +642,10 @@ async function aiFixErrors() {
         toast.info("暂不可用，请等待生成完成");
         return;
     }
+    if (await rerunErrors(true) === true) {
+        toast.info('重新运行后错误自动得到了修复。');
+        return;
+    }
     const oldInputMsg = inputMsg.value;
     inputMsg.value = `你刚才提供的代码有错误，请修复这些错误:\n\n\`\`\`js\n${errorsStr}\n\`\`\`\n\n请修复错误后重新给出正确的、能够正常运行的代码。`;
     send();
@@ -602,19 +655,21 @@ async function aiFixErrors() {
 function render_lines(text) {
     return text.split('\n');
 }
-async function drawCmd(data, { detail: cmdIndex }) {
+async function drawCmd(data, cmdIndex) {
+    if (!data || !cmdIndex) return false;
     const cmd = (data.cmd_list || data.commands)[cmdIndex];
-    if (cmd) {
-        currentCode.value = cmd;
-        try {
-            await execCommandInContext('clear');
-            const { success, error, stack } = await execCommandInContext(cmd, 'code');
-            if (!success) {
-                currentFailures.value.push(stack || error);
-            }
-        } catch (e) {
-            toast.error('命令执行失败: ' + e);
+    if (!cmd) return
+    currentCode.value = cmd;
+    try {
+        await execCommandInContext('clear');
+        const { success, error, stack } = await execCommandInContext(cmd, 'code');
+        if (!success) {
+            currentFailures.value.push(stack || error);
+            currentFailedIndex.value = 0;
         }
+        else return true;
+    } catch (e) {
+        toast.error('命令执行失败: ' + e);
     }
 }
 function viewCmdSource(data, { detail: cmdIndex }) {
@@ -751,6 +806,9 @@ function viewCmdSource(data, { detail: cmdIndex }) {
 textarea {
     resize: none;
 }
+.my-links > a+a {
+    margin-left: 1em;
+}
 </style>
 
 <style scoped>
@@ -824,7 +882,7 @@ textarea {
 }
 
 .message-content {
-    line-height: 1.5;
+    line-height: 1.2;
     white-space: pre-wrap;
 }
 
