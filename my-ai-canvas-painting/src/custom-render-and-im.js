@@ -5,7 +5,7 @@ css.replace(`
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    background-color: #f5f5f5;
+    background-color: #ffffff;
     border-radius: 6px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     font-size: 14px;
