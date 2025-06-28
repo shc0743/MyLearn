@@ -32,7 +32,7 @@ BOOL memory_canexecute(void* address) {
     if (!VirtualProtectEx(GetCurrentProcess(), address, sizeof(DWORD), oldProtect, &op2)) {
         return FALSE;
     }
-    return (oldProtect & 0x10) != 0;
+    return (oldProtect & PAGE_EXECUTE) || (oldProtect & PAGE_EXECUTE_READ) || (oldProtect & PAGE_EXECUTE_READWRITE);
 }
 
 DWORD __stdcall bugless1(PVOID a) {
