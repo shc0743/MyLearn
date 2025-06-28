@@ -84,6 +84,7 @@
         "xlocnum": "cpp",
         "xmemory": "cpp",
         "xtr1common": "cpp",
-        "xtree": "cpp"
+        "xtree": "cpp",
+        "FixUsingAdvancedWin32Verification.C": "cpp"
     }
 }
