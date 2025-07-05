@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Texts</title>
+    <style>
+        #app {
+            position: absolute;
+            inset: 0;
+            box-sizing: border-box;
+        }
+        #user_selection {
+            position: fixed;
+            z-index: 1;
+            opacity: 0;
+            width: 10px;
+            height: 10px;
+            box-sizing: border-box;
+            padding: 0;
+            resize: none;
+            font-size: 0px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="app"></canvas>
+    <textarea id="user_selection"></textarea>
+
+    <script>
+
+        const COMMON_CHARS = `二十丁厂七卜人入八九几儿了力乃刀又三于干亏士工土才寸下大丈与万上小口巾山千乞川亿个勺久凡及夕丸么广亡门义之尸弓己已子卫也女飞刃习叉马乡丰王井开夫天无元专云扎艺木五支厅不太犬区历尤友匹车巨牙屯比互切瓦止少日中冈贝内水见午牛手毛气升长仁什片仆化仇币仍仅斤爪反介父从今凶分乏公仓月氏勿欠风丹匀乌凤勾文六方火为斗忆订计户认心尺引丑巴孔队办以允予劝双书幻玉刊示末未击打巧正扑扒功扔去甘世古节本术汇头汉宁穴它讨写让礼训必议讯记永司尼民出汁丙左厉右石布龙平灭轧东卡北占业旧帅归且旦目叶甲申叮电号田由史只央兄叼叫另叨叹四生失禾丘付仗代仙们仪白仔他斥瓜乎丛令用甩印乐句匆册犯外处冬鸟务包饥主市立闪兰半辽奶奴加召皮边发孕圣对台矛纠母幼丝可式刑动扛寺吉扣考托老执巩圾扩扫地扬场耳共芒亚芝朽朴机权过臣再协西压厌在有百存而页匠夸夺灰达列死成夹轨邪划迈毕至此贞师尘尖劣光当早吐吓虫曲团同吊吃因吸吗屿帆岁回岂刚则肉网年朱先丢舌竹迁乔伟传乒乓休伍伏优伐延件任伤价份华仰仿伙伪自血向似后行舟全会杀合兆企众爷伞创肌朵杂危旬旨负各名多争色壮冲冰庄庆亦刘齐交次衣产决充妄闭问闯羊并关米灯州汗污江池汤忙兴宇守宅字安讲军许论农讽设访寻那迅尽导异孙阵阳收阶阴防奸如妇好她妈戏羽观欢买红纤级约纪驰巡寿弄麦形进戒吞远违运扶抚坛技坏扰拒找批扯址走抄坝贡攻赤折抓扮抢孝均抛投坟抗坑坊抖护壳志扭块声把报却劫芽花芹芬苍芳严芦劳克苏杆杠杜材村杏极李杨求更束豆两丽医辰励否还歼来连步坚旱盯呈时吴助县里呆园旷围呀吨足邮男困吵串员听吩吹呜吧吼别岗帐财针钉告我乱利秃秀私每兵估体何但伸作伯伶佣低你住位伴身皂佛近彻役返余希坐谷妥含邻岔肝肚肠龟免狂犹角删条卵岛迎饭饮系言冻状亩况床库疗应冷这序辛弃冶忘闲间闷判灶灿弟汪沙汽沃泛沟没沈沉怀忧快完宋宏牢究穷灾良证启评补初社识`
+        //    `诉诊词译君灵即层尿尾迟局改张忌际陆阿陈阻附妙妖妨努忍劲鸡驱纯纱纳纲驳纵纷纸纹纺驴纽奉玩环武青责现表规抹拢拔拣担坦押抽拐拖拍者顶拆拥抵拘势抱垃拉拦拌幸招坡披拨择抬其取苦若茂苹苗英范直茄茎茅林枝杯柜析板松枪构杰述枕丧或画卧事刺枣雨卖矿码厕奔奇奋态欧垄妻轰顷转斩轮软到非叔肯齿些虎虏肾贤尚旺具果味昆国昌畅明易昂典固忠咐呼鸣咏呢岸岩帖罗帜岭凯败贩购图钓制知垂牧物乖刮秆和季委佳侍供使例版侄侦侧凭侨佩货依的迫质欣征往爬彼径所舍金命斧爸采受乳贪念贫肤肺肢肿胀朋股肥服胁周昏鱼兔狐忽狗备饰饱饲变京享店夜庙府底剂郊废净盲放刻育闸闹郑券卷单炒炊炕炎炉沫浅法泄河沾泪油泊沿泡注泻泳泥沸波泼泽治怖性怕怜怪学宝宗定宜审宙官空帘实试郎诗肩房诚衬衫视话诞询该详建肃录隶居届刷屈弦承孟孤陕降限妹姑姐姓始驾参艰线练组细驶织终驻驼绍经贯奏春帮珍玻毒型挂封持项垮挎城挠政赴赵挡挺括拴拾挑指垫挣挤拼挖按挥挪某甚革荐巷带草茧茶荒茫荡荣故胡南药标枯柄栋相查柏柳柱柿栏树要咸威歪研砖厘厚砌砍面耐耍牵残殃轻鸦皆背战点临览竖省削尝是盼眨哄显哑冒映星昨畏趴胃贵界虹虾蚁思蚂虽品咽骂哗咱响哈咬咳哪炭峡罚贱贴骨钞钟钢钥钩卸缸拜看矩怎牲选适秒香种秋科重复竿段便俩贷顺修保促侮俭俗俘信皇泉鬼侵追俊盾待律很须叙剑逃食盆胆胜胞胖脉勉狭狮独狡狱狠贸怨急饶蚀饺饼弯将奖哀亭亮度迹庭疮疯疫疤姿亲音帝施闻阀阁差养美姜叛送类迷前首逆总炼炸炮烂剃洁洪洒浇浊洞测洗活派洽染济洋洲浑浓津恒恢恰恼恨举觉宣室宫宪突穿窃客冠语扁袄祖神祝误诱说诵垦退既屋昼费陡眉孩除险院娃姥姨姻娇怒架贺盈勇怠柔垒绑绒结绕骄绘给络骆绝绞统耕耗艳泰珠班素蚕顽盏匪捞栽捕振载赶起盐捎捏埋捉捆捐损都哲逝捡换挽热恐壶挨耻耽恭莲莫荷获晋恶真框桂档桐株桥桃格校核样根索哥速逗栗配翅辱唇夏础破原套逐烈殊顾轿较顿毙致柴桌虑监紧党晒眠晓鸭晃晌晕蚊哨哭恩唤啊唉罢峰圆贼贿钱钳钻铁铃铅缺氧特牺造乘敌秤租积秧秩称秘透笔笑笋债借值倚倾倒倘俱倡候俯倍倦健臭射躬息徒徐舰舱般航途拿爹爱颂翁脆脂胸胳脏胶脑狸狼逢留皱饿恋桨浆衰高席准座脊症病疾疼疲效离唐资凉站剖竞部旁旅畜阅羞瓶拳粉料益兼烤烘烦烧烛烟递涛浙涝酒涉消浩海涂浴浮流润浪浸涨烫涌悟悄悔悦害宽家宵宴宾窄容宰案请朗诸读扇袜袖袍被祥课谁调冤谅谈谊剥恳展剧屑弱陵陶陷陪娱娘通能难预桑绢绣验继球理捧堵描域掩捷排掉堆推掀授教掏掠培接控探据掘职基著勒黄萌萝菌菜萄菊萍菠营械梦梢梅检梳梯桶救副票戚爽聋袭盛雪辅辆虚雀堂常匙晨睁眯眼悬野啦晚啄距跃略蛇累唱患唯崖崭崇圈铜铲银甜梨犁移笨笼笛符第敏做袋悠偿偶偷您售停偏假得衔盘船斜盒鸽悉欲彩领脚脖脸脱象够猜猪猎猫猛馅馆凑减毫麻痒痕廊康庸鹿盗章竟商族旋望率着盖粘粗粒断剪兽清添淋淹渠渐混渔淘液淡深婆梁渗情惜惭悼惧惕惊惨惯寇寄宿窑密谋谎祸谜逮敢屠弹随蛋隆隐婚婶颈绩绪续骑绳维绵绸绿琴斑替款堪搭塔越趁趋超提堤博揭喜插揪搜煮援裁搁搂搅握揉斯期欺联散惹葬葛董葡敬葱落朝辜葵棒棋植森椅椒棵棍棉棚棕惠惑逼厨厦硬确雁殖裂雄暂雅辈悲紫辉敞赏掌晴暑最量喷晶喇遇喊景践跌跑遗蛙蛛蜓喝喂喘喉幅帽赌赔黑铸铺链销锁锄锅锈锋锐短智毯鹅剩稍程稀税筐等筑策筛筒答筋筝傲傅牌堡集焦傍储奥街惩御循艇舒番释禽腊脾腔鲁猾猴然馋装蛮就痛童阔善羡普粪尊道曾焰港湖渣湿温渴滑湾渡游滋溉愤慌惰愧愉慨割寒富窜窝窗遍裕裤裙谢谣谦属屡强粥疏隔隙絮嫂登缎缓编骗缘瑞魂肆摄摸填搏塌鼓摆携搬摇搞塘摊蒜勤鹊蓝墓幕蓬蓄蒙蒸献禁楚想槐榆楼概赖酬感碍碑碎碰碗碌雷零雾雹输督龄鉴睛睡睬鄙愚暖盟歇暗照跨跳跪路跟遣蛾蜂嗓置罪罩错锡锣锤锦键锯矮辞稠愁筹签简毁舅鼠催傻像躲微愈遥腰腥腹腾腿触解酱痰廉新韵意粮数煎塑慈煤煌满漠源滤滥滔溪溜滚滨粱滩慎誉塞谨福群殿辟障嫌嫁叠缝缠静碧璃墙撇嘉摧截誓境摘摔聚蔽慕暮蔑模榴榜榨歌遭酷酿酸磁愿需弊裳颗嗽蜻蜡蝇蜘赚锹锻舞稳算箩管僚鼻魄貌膜膊膀鲜疑馒裹敲豪膏遮腐瘦辣竭端旗精歉熄熔漆漂漫滴演漏慢寨赛察蜜谱嫩翠熊凳骡缩慧撕撒趣趟撑播撞撤增聪鞋蕉蔬横槽樱橡飘醋醉震霉瞒题暴瞎影踢踏踩踪蝶蝴嘱墨镇靠稻黎稿稼箱箭篇僵躺僻德艘膝膛熟摩颜毅糊遵潜潮懂额慰劈操燕薯薪薄颠橘整融醒餐嘴蹄器赠默镜赞篮邀衡膨雕磨凝辨辩糖糕燃澡激懒壁避缴戴擦鞠藏霜霞瞧蹈螺穗繁辫赢糟糠燥臂翼骤`
+        .split('');
+
+
+        app.width = window.innerWidth;
+        app.height = window.innerHeight;
+        const ctx = app.getContext('2d');
+
+        function doDraw() {
+            ctx.clearRect(0, 0, app.width, app.height);
+            ctx.fillStyle = 'black';
+            // 绘制字符
+            const columns = Math.floor(app.width / 16); // 假设每个字符宽约16px
+            const rows = Math.ceil(myChars.length / columns);
+            window.columns = columns;
+            window.rows = rows;
+
+            for (let i = 0; i < myChars.length; i++) {
+                const x = (i % columns) * 16;
+                const y = Math.floor(i / columns) * 16 + 16;
+
+                ctx.fillText(myChars[i], x, y);
+            }
+        }
+        function redraw() {
+            // 设置字体为 NSimsun
+            ctx.font = '16px NSimsun';
+
+            // 获取字符
+            const chars = [];
+            const max = (app.width * (app.height + 1)) / 256;
+            // 相当于 (app.width / 16) * (app.height / 16)，因为每个字符占16px
+            // height + 1 是为了避免最后一行渲染缺失
+            for (let i = 0; i < max; i++) {
+                const arr = new Uint8Array(4);
+                crypto.getRandomValues(arr);
+                const index = (arr[0] + arr[1] + arr[2] + arr[3]) % COMMON_CHARS.length;
+                chars.push(COMMON_CHARS[index]);
+            }
+            window.myChars = chars;
+            doDraw();
+            user_selection.value = '';
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('load', () => {
+            redraw();
+        });
+
+        // 窗口尺寸变化时重新绘制
+        window.addEventListener('resize', () => {
+            app.width = window.innerWidth;
+            app.height = window.innerHeight;
+            redraw();
+        });
+
+        // 用户试图滚动的时候重新绘制
+        app.addEventListener('wheel', () => {
+            redraw();
+        }, { passive: true });
+
+        app.addEventListener('touchstart', () => {
+            redraw();
+        }, { passive: true });
+
+        app.addEventListener('touchmove', () => {
+            redraw();
+        }, { passive: true });
+
+        // 添加一个模拟选中文本的功能
+        app.addEventListener('contextmenu', e => {
+            // user_selection 是一个 textarea
+            user_selection.style.left = e.x + 'px';
+            user_selection.style.top = e.y + 'px';
+            user_selection.hidden = false;
+            user_selection.select();
+        }); // 类似于 CodeMirror
+
+        app.addEventListener('mousedown', e => {
+            e.preventDefault();
+
+            // 计算选中文本的位置
+            const x = e.x;
+            const y = e.y;
+            const start = Math.floor(y / 16) * columns + Math.floor(x / 16);
+            window.mySelection = start;
+        });
+
+        function doHighlight(selectionStart, selectionEnd) {
+            ctx.fillStyle = 'rgba(0, 0, 255, 0.3)';
+            for (let i = selectionStart; i <= selectionEnd; i++) {
+                const row = Math.floor(i / columns);
+                const col = i % columns;
+                const x = col * 16;
+                const y = (row + 1) * 16; // +1 因为字符绘制在基线下方
+
+                // 绘制半透明蓝色背景表示选中
+                ctx.fillRect(x, y - 16, 16, 16);
+
+                // 重新绘制字符（否则会被背景覆盖）
+                ctx.fillStyle = '#000';
+                ctx.fillText(window.myChars[i], x, y);
+                ctx.fillStyle = 'rgba(0, 0, 255, 0.3)';
+            }
+        }
+
+        app.addEventListener('mousemove', e => {
+            e.preventDefault();
+
+            if (e.buttons !== 1) return; // 只在左键按下时处理
+
+            const ctx = app.getContext('2d');
+            const columns = Math.floor(app.width / 16);
+
+            // 计算当前鼠标位置对应的字符索引
+            const x = e.offsetX;
+            const y = e.offsetY;
+            const currentIndex = Math.floor(y / 16) * columns + Math.floor(x / 16);
+
+            // 获取之前存储的起始选择位置
+            const startIndex = window.mySelection;
+
+            // 确定选择范围的起始和结束
+            const selectionStart = Math.min(startIndex, currentIndex);
+            const selectionEnd = Math.max(startIndex, currentIndex);
+
+            // 重绘所有字符
+            doDraw();
+
+            // 高亮选中的字符
+            doHighlight(selectionStart, selectionEnd);
+
+            // 存储当前选择范围
+            window.selectionRange = {
+                start: selectionStart,
+                end: selectionEnd
+            };
+        });
+
+        app.addEventListener('mouseup', e => {
+            e.preventDefault();
+            let shouldClear = false;
+
+            if (e.button === 0) { // 左键释放
+                // 如果有选择范围，将选中的文本放入剪贴板
+                if (window.selectionRange) {
+                    const { start, end } = window.selectionRange;
+                    const selectedText = window.myChars.slice(start, end + 1).join('');
+
+                    user_selection.value = selectedText;
+                } else {
+                    // 单击清空
+                    shouldClear = true;
+                }
+            }
+
+            if (shouldClear) {
+                doDraw();
+                user_selection.value = '';                
+            }
+
+            // 清除选择状态
+            window.mySelection = null;
+            window.selectionRange = null;
+        });
+
+        user_selection.addEventListener('blur', () => {
+            user_selection.hidden = true;
+        })
+
+        user_selection.readOnly = true;
+        user_selection.hidden = true;
+
+        // 按 Ctrl+A 全选
+        window.addEventListener('keydown', e => {
+            if (e.ctrlKey && (!e.altKey) && (!e.shiftKey) && e.key === 'a') {
+                e.preventDefault();
+                doDraw();
+
+                // 覆盖层充满画布
+                doHighlight(0, window.myChars.length - 1);
+                user_selection.value = window.myChars.join('');
+                user_selection.focus();
+                user_selection.select();
+            }
+        });
+    </script>
+</body>
+</html>
