@@ -14,14 +14,11 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="w32oop">
-      <UniqueIdentifier>{dbef03a1-cb9c-4067-acf6-4e880f54876c}</UniqueIdentifier>
+      <UniqueIdentifier>{78b413c2-e6fe-474f-aba5-35161d7e4831}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ApplicationForwarder.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\resource\tool.cpp">
+    <ClCompile Include="FileLockerPlus.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\w32oop\Concurrency\EventObject.cpp">
@@ -63,18 +60,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\w32oop\w32use.hpp">
-      <Filter>w32oop</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\resource\tool.h">
-      <Filter>头文件</Filter>
+      <Filter>资源文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\w32oop\Concurrency\def.hpp">
       <Filter>w32oop</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\w32oop\Concurrency\EventObject.hpp">
-      <Filter>w32oop</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\w32oop\Concurrency\Joinable.hpp">
       <Filter>w32oop</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\w32oop\Concurrency\Process.hpp">
@@ -137,9 +128,6 @@
     <ClInclude Include="..\..\..\w32oop\Utility\def.hpp">
       <Filter>w32oop</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\w32oop\Utility\Memory.hpp">
-      <Filter>w32oop</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\w32oop\Utility\RAII.hpp">
       <Filter>w32oop</Filter>
     </ClInclude>
@@ -153,6 +141,9 @@
       <Filter>w32oop</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\w32oop\Utility\StringUtil\operations.hpp">
+      <Filter>w32oop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\w32oop\Utility\Memory.hpp">
       <Filter>w32oop</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\w32oop\System\Registry.hpp">
