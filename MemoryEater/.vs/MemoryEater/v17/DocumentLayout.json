@@ -1,0 +1,41 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\MemoryEater\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{8EDF6BFE-FBE0-435E-9E21-59D4FD4730E6}|MemoryEater\\MemoryEater.vcxproj|D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\MemoryEater\\MemoryEater\\MemoryEater.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{8EDF6BFE-FBE0-435E-9E21-59D4FD4730E6}|MemoryEater\\MemoryEater.vcxproj|solutionrelative:MemoryEater\\MemoryEater.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MemoryEater.cpp",
+              "DocumentMoniker": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\MemoryEater\\MemoryEater\\MemoryEater.cpp",
+              "RelativeDocumentMoniker": "MemoryEater\\MemoryEater.cpp",
+              "ToolTip": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\MemoryEater\\MemoryEater\\MemoryEater.cpp",
+              "RelativeToolTip": "MemoryEater\\MemoryEater.cpp",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAcwBIAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-07-11T08:28:42.087Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
