@@ -27,7 +27,7 @@ static void memoryUser() {
 			if (stop) return; // Check if we need to stop before writing memory
 			size_t written = 0;
 			if (!WriteProcessMemory(GetCurrentProcess(), i, myMemoryBuffer.get(), oneTimeMem, &written)) {
-				cout << "\nFailed to write memory at " << i << "!" << endl;
+				cout << "\nFailed to write memory at " << ((void*)i) << "!" << endl;
 				Sleep(500);
 				break; // 跳出内层循环。因为 memoryChunks 可能已经更改（多线程），所以需要重新检查。
 			}
