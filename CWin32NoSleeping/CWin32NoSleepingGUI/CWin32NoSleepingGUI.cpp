@@ -29,16 +29,10 @@ protected:
 
 		cSystem = CheckBox(hwnd, L"System", 100, 30, 10, 50);
 		cSystem.create();
-		cSystem.onChanged([this](EventData& ev) {
-			ev.preventDefault();
-		});
 		cSystem.show();
 
 		cDisplay = CheckBox(hwnd, L"Display", 100, 30, 120, 50);
 		cDisplay.create();
-		cDisplay.onChanged([this](EventData& ev) {
-			ev.preventDefault();
-		});
 		cDisplay.show();
 
 		cDisplay.check(); // 默认选中Display
@@ -88,7 +82,7 @@ private:
 		if (!(cSystem.checked() || cDisplay.checked())) {
 			return; // 如果没有选中，则允许关闭
 		}
-		if (MessageBoxW(hwnd, L"Are you sure you want to close the application?", L"Confirm Close", MB_YESNO | MB_ICONQUESTION) != IDYES) {
+		if (MessageBoxW(hwnd, L"Are you sure you want to close the application?", L"Confirm Close", MB_OKCANCEL | MB_ICONQUESTION) != IDOK) {
 			ev.preventDefault();
 		}
 	}
