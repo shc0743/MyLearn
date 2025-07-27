@@ -52,8 +52,7 @@
               "RelativeToolTip": "..\\..\\w32oop\\GUI\\Window.hpp",
               "ViewState": "AgIAAL4CAAAAAAAAAAASwMoCAAASAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-07-27T10:30:18.535Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-27T10:30:18.535Z"
             },
             {
               "$type": "Document",
@@ -65,8 +64,7 @@
               "RelativeToolTip": "..\\..\\..\\..\\..\\..\\..\\VisualStudio\\ms\\versions\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\include\\thread",
               "ViewState": "AgIAAHcAAAAAAAAAAAASwIQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-07-27T10:27:36.149Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-27T10:27:36.149Z"
             },
             {
               "$type": "Document",
@@ -76,7 +74,7 @@
               "RelativeDocumentMoniker": "CWin32NoSleepingGUI\\CWin32NoSleepingGUI.cpp",
               "ToolTip": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn__\\CWin32NoSleeping\\CWin32NoSleepingGUI\\CWin32NoSleepingGUI.cpp",
               "RelativeToolTip": "CWin32NoSleepingGUI\\CWin32NoSleepingGUI.cpp",
-              "ViewState": "AgIAABMAAAAAAAAAAAASwCgAAAAFAAAAAAAAAA==",
+              "ViewState": "AgIAAEMAAAAAAAAAAAASwFUAAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-07-27T04:40:13.264Z",
               "EditorCaption": ""
@@ -91,8 +89,7 @@
               "RelativeToolTip": "CWin32NoSleeping\\CWin32NoSleeping.cpp",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAABCAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-07-27T04:39:54.564Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-27T04:39:54.564Z"
             }
           ]
         }
