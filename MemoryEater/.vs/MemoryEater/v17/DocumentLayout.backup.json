@@ -14,7 +14,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -29,10 +29,6 @@
               "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
-            },
-            {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "MemoryEater.cpp",
@@ -40,10 +36,14 @@
               "RelativeDocumentMoniker": "MemoryEater\\MemoryEater.cpp",
               "ToolTip": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn__\\MemoryEater\\MemoryEater\\MemoryEater.cpp",
               "RelativeToolTip": "MemoryEater\\MemoryEater.cpp",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAcwB8AAABLAAAAAAAAAA==",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAcwB4AAAA6AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-07-11T08:28:42.087Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             }
           ]
         }
