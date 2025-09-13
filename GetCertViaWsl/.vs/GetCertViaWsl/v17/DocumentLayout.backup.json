@@ -1,0 +1,41 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\GetCertViaWsl\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{93D37C52-E77A-472C-9A7E-CECE160A97E3}|GetCertViaWsl\\GetCertViaWsl.vcxproj|D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\GetCertViaWsl\\GetCertViaWsl\\GetCertViaWsl.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{93D37C52-E77A-472C-9A7E-CECE160A97E3}|GetCertViaWsl\\GetCertViaWsl.vcxproj|solutionrelative:GetCertViaWsl\\GetCertViaWsl.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "GetCertViaWsl.cpp",
+              "DocumentMoniker": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\GetCertViaWsl\\GetCertViaWsl\\GetCertViaWsl.cpp",
+              "RelativeDocumentMoniker": "GetCertViaWsl\\GetCertViaWsl.cpp",
+              "ToolTip": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\GetCertViaWsl\\GetCertViaWsl\\GetCertViaWsl.cpp",
+              "RelativeToolTip": "GetCertViaWsl\\GetCertViaWsl.cpp",
+              "ViewState": "AgIAAI8AAAAAAAAAAAAAAJoAAAA3AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-09-13T11:07:43.425Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
