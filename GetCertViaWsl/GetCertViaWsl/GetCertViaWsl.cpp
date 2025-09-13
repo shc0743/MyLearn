@@ -231,7 +231,7 @@ protected:
 		wstring cpDstPath = saveTo.ends_with(L"\\") ? saveTo : (saveTo + L"\\");
 		w32oop::util::str::operations::replace(cpDstPath, L"\\", L"/");
 		cpDstPath = L"/mnt/" + cpDstPath.substr(0, 1) + cpDstPath.substr(2); // C:/path -> /mnt/c/path
-		wstring cmd = L"wsl -- cd ~ && " + domainArgs + L" && cp -r '" + cpSrcPath + L"/' '" + cpDstPath + L"' && rm -rf '" + cpSrcPath + L"' && echo 'Success!' && exit";
+		wstring cmd = L"wsl -- cd ~ && " + domainArgs + L" && cp -r \"" + cpSrcPath + L"/\" \"" + cpDstPath + L"\" && rm -rf \"" + cpSrcPath + L"\" && echo 'Success!' && exit";
 		int cf = 0;
 		TaskDialog(hwnd,hInst, L"Confirm Command",
 			L"The command to be executed in WSL is shown below. Please confirm that you have configured the verification method correctly and that you want to proceed.",
