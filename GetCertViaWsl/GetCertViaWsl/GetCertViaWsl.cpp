@@ -230,7 +230,7 @@ protected:
 		wstring cpSrcPath = L"~/.acme.sh/" + domainList[0] + ((r.value().find(L"ec-") != wstring::npos) ? L"_ecc" : L"");
 		wstring cpDstPath = saveTo.ends_with(L"\\") ? saveTo : (saveTo + L"\\");
 		w32oop::util::str::operations::replace(cpDstPath, L"\\", L"/");
-		cpDstPath = L"/mnt/" + cpDstPath.substr(0, 1) + cpDstPath.substr(2); // C:/path -> /mnt/c/path
+		cpDstPath = L"/mnt/" + towlower(cpDstPath.substr(0, 1)[0]) + cpDstPath.substr(2); // C:/path -> /mnt/c/path
 		wstring cmd = L"wsl -- cd ~ && " + domainArgs + L" && cp -r \"" + cpSrcPath + L"/\" \"" + cpDstPath + L"\" && rm -rf \"" + cpSrcPath + L"\" && echo 'Success!' && exit";
 		int cf = 0;
 		TaskDialog(hwnd,hInst, L"Confirm Command",
