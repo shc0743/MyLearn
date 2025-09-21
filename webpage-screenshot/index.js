@@ -19,7 +19,23 @@ function autoScroll(page) {
             }, 100);
         })
     });
-  }
+}
+
+async function sha256(input) {
+    // 将输入字符串编码为UTF-8
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+
+    // 使用Web Crypto API计算哈希
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+
+    // 将ArrayBuffer转换为十六进制字符串
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    return hashHex;
+}
+
 
 export async function handler(event, context) {
     event = JSON.parse(event);
