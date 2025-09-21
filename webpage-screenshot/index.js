@@ -22,18 +22,7 @@ function autoScroll(page) {
 }
 
 async function sha256(input) {
-    // 将输入字符串编码为UTF-8
-    const encoder = new TextEncoder();
-    const data = encoder.encode(input);
-
-    // 使用Web Crypto API计算哈希
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-
-    // 将ArrayBuffer转换为十六进制字符串
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    return hashHex;
+    return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', (new TextEncoder()).encode(input)))).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 
@@ -53,6 +42,13 @@ export async function handler(event, context) {
             body: ''
         };
     }
+
+    if (process.env.password) {
+        if (process.env.password !== (await sha256(event.headers.Authorization + process.env.salt))) return {
+            statusCode: 401, headers: { 'WWW-Authenticate': 'Basic' }
+        }
+    }
+    // password should be SHA256('Basic <Base64-encoded username:password>')
     
     if (method === 'GET' && url === 'favicon.ico') {
         try {
