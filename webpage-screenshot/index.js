@@ -48,7 +48,7 @@ export async function handler(event, context) {
             statusCode: 401, headers: { 'WWW-Authenticate': 'Basic' }
         }
     }
-    // password should be SHA256('Basic <Base64-encoded username:password>')
+    // password should be SHA256('Basic <Base64-encoded username:password>' + salt)
     
     if (method === 'GET' && url === 'favicon.ico') {
         try {
