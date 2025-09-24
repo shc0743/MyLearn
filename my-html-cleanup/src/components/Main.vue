@@ -82,7 +82,7 @@
 
 <script setup>
 import { ElMessage, ElMessageBox, ElInput } from 'element-plus';
-import { computed, onBeforeMount, ref, watch } from 'vue';
+import { computed, onBeforeMount, ref, watch, onMounted, onUnmounted } from 'vue';
 
 const userContent = ref('');
 const allowed_modes = ref(['html5', 'dompurify', 'text']);
@@ -133,6 +133,47 @@ onBeforeMount(() => {
         dpConfig.value = dpconf;
     }
 })
+
+onMounted(() => {
+    const pasteHandler = async (event) => {
+        // 1. 如果焦点在输入框或可输入元素则 return
+        const active = document.activeElement;
+        if (
+            active &&
+            (
+                active.tagName === 'INPUT' ||
+                active.tagName === 'TEXTAREA' ||
+                active.isContentEditable
+            )
+        ) return;
+
+        // 2. 阻止默认行为
+        event.preventDefault();
+
+        // 3. 判断剪贴板内容
+        const clipboardData = event.clipboardData || window.clipboardData;
+        if (!clipboardData) return;
+
+        // 文件优先
+        if (clipboardData.files && clipboardData.files.length > 0) {
+            await add_file(clipboardData.files);
+            return;
+        }
+
+        // 文本
+        const text = clipboardData.getData('text');
+        if (text) {
+            userContent.value = text;
+        }
+    };
+
+    window.addEventListener('paste', pasteHandler, { capture: true });
+
+    // 卸载时移除
+    onUnmounted(() => {
+        window.removeEventListener('paste', pasteHandler, { capture: true });
+    });
+});
 
 function doPaste() {
     navigator.clipboard.readText().then((text) => {
