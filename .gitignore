@@ -45,3 +45,5 @@ dist
 node_modules
 CopilotIndices
 🐍.wav
+.gradle
+build
