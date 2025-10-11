@@ -48,10 +48,15 @@
                 <ElCheckbox v-model="h5config.removes.script">script</ElCheckbox>
                 <ElCheckbox v-model="h5config.removes.iframe">iframe</ElCheckbox>
                 <ElCheckbox v-model="h5config.removes.meta">meta</ElCheckbox>
-                <ElCheckbox v-model="h5config.remove_style_attr">[style]&nbsp;<span style="color: var(--el-color-info-light-3)">attr</span></ElCheckbox>
                 <ElCheckbox v-model="h5config.removes.a">&lt;a&gt;</ElCheckbox>
+                <ElCheckbox v-model="h5config.remove_attrs.style">[style]&nbsp;<span style="color: var(--el-color-info-light-3)">attr</span></ElCheckbox>
+                <ElCheckbox v-model="h5config.remove_attrs.class">[class]&nbsp;<span style="color: var(--el-color-info-light-3)">attr</span></ElCheckbox>
+                <ElCheckbox v-model="h5config.remove_attrs.role">[role]&nbsp;<span style="color: var(--el-color-info-light-3)">attr</span></ElCheckbox>
+                <ElCheckbox v-model="h5config.remove_data_attrs">[data-*] attrs</ElCheckbox>
+                <ElCheckbox v-model="h5config.remove_aria_attrs">[aria-*] attrs</ElCheckbox>
                 <ElCheckbox v-model="h5config.removes.embed">embed</ElCheckbox>
                 <ElCheckbox v-model="h5config.removes.object">object</ElCheckbox>
+                <ElCheckbox v-model="h5config.remove_empty_elements">Empty elements</ElCheckbox>
             </div>
             <div class="MyConfigRow" v-if="mode === 'html5'">
                 <span style="margin-right: 0.5em;">Custom rule</span>
@@ -121,12 +126,16 @@ onBeforeMount(() => {
     } catch {
         h5config.value = {
             removes: {},
+            remove_attrs: {},
             remove_comments: true,
+            remove_aria_attrs: true,
+            remove_data_attrs: true,
+            remove_empty_elements: false,
         };
-        const ls = 'style,link,svg,script,meta'.split(',');
-        for (const k of ls) {
+        for (const k of 'style,link,svg,script,meta'.split(',')) 
             h5config.value.removes[k] = true;
-        }
+        for (const k of 'role'.split(',')) 
+            h5config.value.remove_attrs[k] = true;
     }
     const dpconf = localStorage.getItem('MyHTMLCleanupApp::DPConfig');
     if (dpconf) {
@@ -287,6 +296,11 @@ const dpConfigValid = computed(() => {
 });
 const h5config = ref({
     removes: {},
+    remove_attrs: {},
+    remove_comments: true,
+    remove_aria_attrs: true,
+    remove_data_attrs: true,
+    remove_empty_elements: false,
 });
 const isRunning = ref(false);
 const userContent_old = ref(null);
@@ -363,6 +377,9 @@ async function run() {
     try {
         // Remove things according to the configuration
         let removesList = Reflect.ownKeys(h5config.value.removes).filter((k) => !!h5config.value.removes[k]).join(',');
+        if (h5config.value.remove_empty_elements) {
+            removesList += ',*:empty';
+        }
         if (h5config.value.custom_rule) {
             removesList += ',' + h5config.value.custom_rule;
         }
@@ -382,10 +399,23 @@ async function run() {
                 comment.remove();
             }
         }
-        // Remove style attribute
-        if (h5config.value.remove_style_attr) {
-            for (const el of root.querySelectorAll('[style]')) {
-                el.removeAttribute('style');
+        // Remove attributes
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, null, false);
+        const should_remove_attrs = [];
+        while (walker.nextNode()) {
+            const el = walker.currentNode;
+            should_remove_attrs.length = 0;
+            for (const attr of el.attributes) {
+                if (
+                    h5config.value.remove_attrs[attr.name] ||
+                    (h5config.value.remove_aria_attrs && attr.name.startsWith('aria-')) ||
+                    (h5config.value.remove_data_attrs && attr.name.startsWith('data-'))
+                ) {
+                    should_remove_attrs.push(attr.name);
+                }
+            }
+            for (const attr of should_remove_attrs) {
+                el.removeAttribute(attr);
             }
         }
         // Write back to userContent
