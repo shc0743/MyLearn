@@ -123,6 +123,11 @@ onBeforeMount(() => {
         if (!json) throw json;
         json.removes = json.removes || {};
         h5config.value = json;
+        // 检查 JSON 的结构，避免 App 数据结构升级导致页面加载失败
+        if (!json.removes || !json.remove_attrs) {
+            ElMessage.error("Application has updated. You may need to re-configure.");
+            throw 1;
+        }
     } catch {
         h5config.value = {
             removes: {},
