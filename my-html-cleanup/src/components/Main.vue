@@ -54,6 +54,7 @@
                 <ElCheckbox v-model="h5config.remove_attrs.role">[role]&nbsp;<span style="color: var(--el-color-info-light-3)">attr</span></ElCheckbox>
                 <ElCheckbox v-model="h5config.remove_data_attrs">[data-*] attrs</ElCheckbox>
                 <ElCheckbox v-model="h5config.remove_aria_attrs">[aria-*] attrs</ElCheckbox>
+                <ElCheckbox v-model="h5config.remove_attrs.jslog">[jslog]&nbsp;<span style="color: var(--el-color-info-light-3)">attr</span></ElCheckbox>
                 <ElCheckbox v-model="h5config.removes.embed">embed</ElCheckbox>
                 <ElCheckbox v-model="h5config.removes.object">object</ElCheckbox>
                 <ElCheckbox v-model="h5config.remove_empty_elements">Empty elements</ElCheckbox>
@@ -139,7 +140,7 @@ onBeforeMount(() => {
         };
         for (const k of 'style,link,svg,script,meta'.split(',')) 
             h5config.value.removes[k] = true;
-        for (const k of 'role'.split(',')) 
+        for (const k of 'role,jslog'.split(',')) 
             h5config.value.remove_attrs[k] = true;
     }
     const dpconf = localStorage.getItem('MyHTMLCleanupApp::DPConfig');
