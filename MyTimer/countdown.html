@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能高精度计时器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 100px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .status.ready { background: #d4edda; }
+        .status.running { background: #fff3cd; }
+        .status.error { background: #f8d7da; }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏱️ 智能高精度计时器</h1>
+        
+        <div class="input-group">
+            <label>设置计时时间 (毫秒): </label>
+            <input type="number" id="timeInput" value="1000" min="1">
+            <button onclick="startTimer()" id="startBtn" disabled>开始计时</button>
+            <button onclick="stopTimer()" id="stopBtn" disabled>停止</button>
+        </div>
+        
+        <div id="status" class="status">正在进行校准，请稍候...</div>
+        
+        <div id="result" class="result" style="display: none;">
+            <h3>计时结果:</h3>
+            <div id="resultContent"></div>
+        </div>
+        
+        <div style="margin-top: 20px; font-size: 14px; color: #666;">
+            <p><strong>工作模式:</strong></p>
+            <p>• ≤ 10秒: 使用WASM高精度计算计时 (精度~1ms)</p>
+            <p>• > 10秒: 使用JavaScript传统计时 (精度~10ms)</p>
+        </div>
+    </div>
+
+    <script>
+        let worker = null;
+        let jsTimer = null;
+        let startTime = null;
+        
+        // 初始化Worker
+        function initWorker() {
+            if (!worker) {
+                worker = new Worker('timer-worker.js');
+                
+                worker.onmessage = function(e) {
+                    switch (e.data.type) {
+                        case 'init_success':
+                            updateStatus('WASM Worker初始化成功', 'ready');
+                            document.getElementById('startBtn').disabled = false;
+                            break;
+                            
+                        case 'init_error':
+                            updateStatus('Worker初始化失败: ' + e.data.error, 'error');
+                            break;
+                            
+                        case 'timer_end':
+                            handleTimerEnd(e.data.result);
+                            break;
+                    }
+                };
+                
+                worker.onerror = function(error) {
+                    updateStatus('Worker错误: ' + error.message, 'error');
+                };
+                
+                // 初始化Worker
+                worker.postMessage({ type: 'init' });
+            }
+        }
+        
+        // 开始计时
+        function startTimer() {
+            const duration = parseInt(document.getElementById('timeInput').value);
+            
+            if (isNaN(duration) || duration <= 0) {
+                alert('请输入有效的时间');
+                return;
+            }
+            
+            updateStatus(`计时中: ${duration}ms...`, 'running');
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('result').style.display = 'none';
+            
+            startTime = Date.now();
+            
+            if (duration <= 10000) { // 10秒以内使用高精度
+                if (!worker) {
+                    initWorker();
+                }
+                worker.postMessage({ type: 'start_precise', duration });
+            } else { // 10秒以上使用传统计时
+                jsTimer = setTimeout(() => {
+                    handleTimerEnd({
+                        scheduled: duration,
+                        actual: Date.now() - startTime,
+                        error: 0
+                    });
+                }, duration);
+            }
+        }
+        
+        // 停止计时
+        function stopTimer() {
+            if (worker) {
+                worker.postMessage({ type: 'stop' });
+            }
+            if (jsTimer) {
+                clearTimeout(jsTimer);
+                jsTimer = null;
+            }
+            updateStatus('计时已停止', 'ready');
+            resetButtons();
+        }
+        
+        // 处理计时结束
+// 在handleTimerEnd函数中添加调试信息
+function handleTimerEnd(result) {
+    const endTime = Date.now();
+    const actualDuration = endTime - startTime;
+    
+    const precision = ((1 - result.error / result.scheduled) * 100).toFixed(2);
+    
+    console.log(`计时结果: 设定=${result.scheduled}ms, 实际=${actualDuration.toFixed(2)}ms, 误差=${result.error.toFixed(2)}ms`);
+    
+    document.getElementById('resultContent').innerHTML = `
+        <p>设定时间: ${result.scheduled}ms</p>
+        <p>实际时间: ${actualDuration.toFixed(2)}ms</p>
+        <p>误差: ${result.error.toFixed(2)}ms</p>
+        <p>精度: ${precision}%</p>
+        <p>模式: ${result.scheduled <= 10000 ? 'WASM高精度' : '传统计时'}</p>
+    `;
+    
+    document.getElementById('result').style.display = 'block';
+    
+    if (precision < 90) {
+        updateStatus(`警告: 精度较低 (${precision}%)，建议重新校准`, 'error');
+    } else {
+        updateStatus('计时完成!', 'ready');
+    }
+    
+    resetButtons();
+}
+        
+        // 更新状态
+        function updateStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+        
+        // 重置按钮状态
+        function resetButtons() {
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+        }
+        
+        // 页面加载时初始化
+        window.onload = initWorker;
+    </script>
+</body>
+</html>

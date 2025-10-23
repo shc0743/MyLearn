@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高精度计时器 WASM 演示</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button { 
+            margin: 5px; 
+            padding: 10px 15px; 
+            background: #007acc; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer;
+        }
+        button:hover { background: #005a9e; }
+        button:disabled { background: #cccccc; cursor: not-allowed; }
+        .result { 
+            margin: 10px 0; 
+            padding: 10px; 
+            background: #e8f4fd; 
+            border-radius: 4px; 
+            border-left: 4px solid #007acc;
+        }
+        .comparison { 
+            display: flex; 
+            justify-content: space-between; 
+            margin: 20px 0;
+        }
+        .comparison > div { 
+            flex: 1; 
+            margin: 0 10px; 
+            padding: 15px; 
+            background: #f8f9fa; 
+            border-radius: 4px;
+        }
+        code { 
+            background: #f4f4f4; 
+            padding: 2px 4px; 
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕒 高精度计时器 WASM 演示</h1>
+        <p>使用 C++ chrono 库实现的纳秒级精度计时器</p>
+        
+        <div class="comparison">
+            <div>
+                <h3>WASM 高精度计时器</h3>
+                <button onclick="getWasmNanoseconds()">获取纳秒时间戳</button>
+                <button onclick="startWasmTimer()">启动计时器</button>
+                <button onclick="stopWasmTimer()" id="stopWasmBtn" disabled>停止计时器</button>
+                <button onclick="runPerformanceTest()">性能测试 (Fibonacci 35)</button>
+                <div id="wasmResults"></div>
+            </div>
+            
+            <div>
+                <h3>JavaScript 原生计时器</h3>
+                <button onclick="getJSNanoseconds()">获取纳秒时间戳</button>
+                <button onclick="startJSTimer()">启动计时器</button>
+                <button onclick="stopJSTimer()" id="stopJSBtn" disabled>停止计时器</button>
+                <button onclick="runJSPerformanceTest()">性能测试 (Fibonacci 35)</button>
+                <div id="jsResults"></div>
+            </div>
+        </div>
+
+        <div>
+            <h3>实时时间戳监控</h3>
+            <button onclick="startRealtimeMonitor()">启动实时监控</button>
+            <button onclick="stopRealtimeMonitor()">停止实时监控</button>
+            <div id="realtimeResults" style="height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <script src="timer.js"></script>
+
+<script>
+    let wasmModule;
+    let wasmTimerHandle = null;
+    let jsTimerStart = null;
+    let realtimeInterval = null;
+
+    // 初始化 WASM 模块
+    async function initializeWasm() {
+        try {
+            wasmModule = await timer();
+            console.log('WASM 模块加载成功');
+            
+            // 测试函数是否正常
+            const testNs = wasmModule._get_nanoseconds_since_epoch();
+            console.log('测试时间戳:', testNs, typeof testNs);
+            
+        } catch (error) {
+            console.error('WASM 模块加载失败:', error);
+            document.getElementById('wasmResults').innerHTML = 
+                '<div class="result" style="color: red;">WASM 模块加载失败: ' + error.message + '</div>';
+        }
+    }
+
+    // WASM 函数包装 - 正确处理 BigInt
+    function getNanoseconds() {
+        const result = wasmModule._get_nanoseconds_since_epoch();
+        return typeof result === 'bigint' ? result : BigInt(result);
+    }
+
+    function getMicroseconds() {
+        const result = wasmModule._get_microseconds_since_epoch();
+        return typeof result === 'bigint' ? result : BigInt(result);
+    }
+
+    function getMilliseconds() {
+        const result = wasmModule._get_milliseconds_since_epoch();
+        return typeof result === 'bigint' ? result : BigInt(result);
+    }
+
+    function createTimer() {
+        const result = wasmModule._create_timer();
+        return typeof result === 'bigint' ? result : BigInt(result);
+    }
+
+    function getElapsedNanoseconds(handle) {
+        const result = wasmModule._get_elapsed_nanoseconds(handle);
+        return typeof result === 'bigint' ? result : BigInt(result);
+    }
+
+    function destroyTimer(handle) {
+        wasmModule._destroy_timer(handle);
+    }
+
+    function fibonacciTest(n) {
+        const result = wasmModule._fibonacci_test(n);
+        return typeof result === 'bigint' ? result : BigInt(result);
+    }
+
+    // WASM 操作函数 - 正确处理 BigInt 显示
+    function getWasmNanoseconds() {
+        try {
+            const ns = getNanoseconds();
+            // 将 BigInt 转换为字符串显示，避免数值运算
+            document.getElementById('wasmResults').innerHTML = 
+                `<div class="result">
+                    <strong>纳秒时间戳:</strong><br>
+                    ${ns.toString()} ns<br>
+                    <small>${(Number(ns) / 1e9).toFixed(9)} 秒</small>
+                </div>`;
+        } catch (error) {
+            document.getElementById('wasmResults').innerHTML = 
+                '<div class="result" style="color: red;">错误: ' + error.message + '</div>';
+        }
+    }
+
+    function startWasmTimer() {
+        try {
+            wasmTimerHandle = createTimer();
+            document.getElementById('stopWasmBtn').disabled = false;
+            document.getElementById('wasmResults').innerHTML = 
+                '<div class="result">计时器已启动...</div>';
+        } catch (error) {
+            document.getElementById('wasmResults').innerHTML = 
+                '<div class="result" style="color: red;">启动计时器失败: ' + error.message + '</div>';
+        }
+    }
+
+    function stopWasmTimer() {
+        if (wasmTimerHandle !== null) {
+            try {
+                const elapsed = getElapsedNanoseconds(wasmTimerHandle);
+                destroyTimer(wasmTimerHandle);
+                wasmTimerHandle = null;
+                document.getElementById('stopWasmBtn').disabled = true;
+                document.getElementById('wasmResults').innerHTML = 
+                    `<div class="result">
+                        <strong>经过时间:</strong><br>
+                        ${elapsed.toString()} ns<br>
+                        <small>${(Number(elapsed) / 1e6).toFixed(6)} 毫秒</small>
+                    </div>`;
+            } catch (error) {
+                document.getElementById('wasmResults').innerHTML = 
+                    '<div class="result" style="color: red;">停止计时器失败: ' + error.message + '</div>';
+            }
+        }
+    }
+
+    function runPerformanceTest() {
+        document.getElementById('wasmResults').innerHTML = 
+            '<div class="result">计算中... (Fibonacci 35)</div>';
+        
+        setTimeout(() => {
+            try {
+                const elapsed = fibonacciTest(35);
+                document.getElementById('wasmResults').innerHTML = 
+                    `<div class="result">
+                        <strong>性能测试结果:</strong><br>
+                        Fibonacci(35) 计算耗时:<br>
+                        ${elapsed.toString()} ns<br>
+                        <small>${(Number(elapsed) / 1e6).toFixed(3)} 毫秒</small>
+                    </div>`;
+            } catch (error) {
+                document.getElementById('wasmResults').innerHTML = 
+                    '<div class="result" style="color: red;">性能测试失败: ' + error.message + '</div>';
+            }
+        }, 100);
+    }
+
+    // JavaScript 原生实现
+    function getJSNanoseconds() {
+        // 使用 BigInt 避免数值精度问题
+        const ns = BigInt(Math.floor(performance.now() * 1e6));
+        document.getElementById('jsResults').innerHTML = 
+            `<div class="result">
+                <strong>纳秒时间戳:</strong><br>
+                ${ns.toString()} ns<br>
+                <small>${(Number(ns) / 1e9).toFixed(9)} 秒</small>
+            </div>`;
+    }
+
+    function startJSTimer() {
+        jsTimerStart = performance.now();
+        document.getElementById('stopJSBtn').disabled = false;
+        document.getElementById('jsResults').innerHTML = 
+            '<div class="result">计时器已启动...</div>';
+    }
+
+    function stopJSTimer() {
+        if (jsTimerStart !== null) {
+            const elapsed = (performance.now() - jsTimerStart) * 1e6;
+            jsTimerStart = null;
+            document.getElementById('stopJSBtn').disabled = true;
+            document.getElementById('jsResults').innerHTML = 
+                `<div class="result">
+                    <strong>经过时间:</strong><br>
+                    ${Math.floor(elapsed)} ns<br>
+                    <small>${(elapsed / 1e6).toFixed(6)} 毫秒</small>
+                </div>`;
+        }
+    }
+
+    function runJSPerformanceTest() {
+        document.getElementById('jsResults').innerHTML = 
+            '<div class="result">计算中... (Fibonacci 35)</div>';
+        
+        setTimeout(() => {
+            const start = performance.now();
+            
+            function fib(n) {
+                if (n <= 1) return n;
+                return fib(n - 1) + fib(n - 2);
+            }
+            
+            fib(35);
+            const elapsed = (performance.now() - start) * 1e6;
+            
+            document.getElementById('jsResults').innerHTML = 
+                `<div class="result">
+                    <strong>性能测试结果:</strong><br>
+                    Fibonacci(35) 计算耗时:<br>
+                    ${Math.floor(elapsed)} ns<br>
+                    <small>${(elapsed / 1e6).toFixed(3)} 毫秒</small>
+                </div>`;
+        }, 100);
+    }
+
+    // 实时监控 - 正确处理 BigInt 比较
+    function startRealtimeMonitor() {
+        stopRealtimeMonitor();
+        const resultsDiv = document.getElementById('realtimeResults');
+        resultsDiv.innerHTML = '<div>启动实时监控...</div>';
+        
+        let count = 0;
+        realtimeInterval = setInterval(() => {
+            try {
+                const wasmTime = getNanoseconds();
+                const jsTime = BigInt(Math.floor(performance.now() * 1e6));
+                // BigInt 可以直接相减
+                const difference = wasmTime - jsTime;
+                
+                count++;
+                resultsDiv.innerHTML = 
+                    `<div>[${count}] WASM: ${wasmTime.toString()} ns | JS: ${jsTime.toString()} ns | 差值: ${difference.toString()} ns</div>` + 
+                    resultsDiv.innerHTML;
+                
+                if (count > 50) {
+                    resultsDiv.innerHTML = resultsDiv.innerHTML.split('<div>').slice(0, 51).join('<div>');
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div style="color: red;">监控错误: ${error.message}</div>`;
+                stopRealtimeMonitor();
+            }
+        }, 100);
+    }
+
+    function stopRealtimeMonitor() {
+        if (realtimeInterval) {
+            clearInterval(realtimeInterval);
+            realtimeInterval = null;
+        }
+    }
+
+    // 页面加载时初始化
+    initializeWasm();
+</script>
+
+</body>
+</html>
