@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>贪吃蛇游戏</title>
+    <style>
+        #app {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #000;
+        }
+        #canvas {
+            width: 100%;
+            height: auto;
+            max-width: 400px;
+            max-height: 400px;
+            aspect-ratio: 1;
+        }
+        #keyboard-trigger {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 60px;
+            height: 30px;
+            background: rgba(255,255,255,0.8);
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+        }
+        .mobile-controls {
+            justify-content: center;
+            gap: 10px;
+            z-index: 99;
+            display: flex;
+        }
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.3);
+            border: 2px solid white;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #virtual-keyboard {
+            position: absolute;
+            top: -100px;
+            left: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            border: none;
+            background: transparent;
+        }
+        .space { flex: 1 }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="space"></div>
+        <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+        <input type="text" id="virtual-keyboard" />
+        <!--button id="keyboard-trigger">键盘</button-->
+        <button id="keyboard-trigger">R</button>
+        <div class="space"></div>
+        <div class="mobile-controls">
+            <button class="control-btn" data-key="ArrowUp">↑</button>
+        </div>
+        <div class="mobile-controls">
+            <button class="control-btn" data-key="ArrowLeft">←</button>
+            <button class="control-btn" data-key="ArrowDown">↓</button>
+            <button class="control-btn" data-key="ArrowRight">→</button>
+        </div>
+    </div>
+
+    <script>
+        // 聚焦虚拟键盘输入框
+        function focusKeyboard() {
+        simulateKeyPress('R');return;
+            const input = document.getElementById('virtual-keyboard');
+            input.focus();
+        }
+
+        // 页面加载后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+
+
+            // 键盘触发按钮
+            document.getElementById('keyboard-trigger').addEventListener('click', focusKeyboard);
+            
+            // 移动端控制按钮
+            document.querySelectorAll('.control-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const key = this.getAttribute('data-key');
+                    simulateKeyPress(key);
+                });
+            });
+
+            // 处理虚拟键盘输入
+            document.getElementById('virtual-keyboard').addEventListener('keydown', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // 转发按键事件到 SDL
+                const newEvent = new KeyboardEvent('keydown', {
+                    key: e.key,
+                    code: e.code,
+                    keyCode: e.keyCode,
+                    which: e.which,
+                    bubbles: true
+                });
+                document.dispatchEvent(newEvent);
+                
+                // 保持焦点
+                setTimeout(focusKeyboard, 50);
+            });
+        });
+
+        // 模拟按键事件
+        function simulateKeyPress(key) {
+            const event = new KeyboardEvent('keydown', {
+                key: key,
+                code: (key.length-1)?key:('Key'+key.toUpperCase()),
+                keyCode: getKeyCode(key),
+                which: getKeyCode(key),
+                bubbles: true
+            });
+            canvas.dispatchEvent(event);
+        }
+
+        function getKeyCode(key) {
+            const keyCodes = {
+                'ArrowUp': 38,
+                'ArrowDown': 40,
+                'ArrowLeft': 37,
+                'ArrowRight': 39,
+                ' ': 32,
+                'r': 82,
+                'q': 81,
+                'w': 87,
+                'a': 65,
+                's': 83,
+                'd': 68,
+                'R': 82,
+            };
+            return keyCodes[key] || 0;
+        }
+
+        // Emscripten 模块配置
+        var Module = {
+            canvas: document.getElementById('canvas'),
+            print: function(text) {
+                console.log(text);
+            },
+            printErr: function(text) {
+                console.error(text);
+            },
+            setStatus: function(text) {
+                console.log(text);
+            },
+            totalDependencies: 0,
+            monitorRunDependencies: function(left) {
+                this.totalDependencies = Math.max(this.totalDependencies, left);
+            }
+        };
+    </script>
+    
+    {{{ SCRIPT }}}
+</body>
+</html>

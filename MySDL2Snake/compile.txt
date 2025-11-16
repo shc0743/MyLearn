@@ -1,0 +1,46 @@
+  526  pkg update
+  527  pkg install x11-repo
+  528  pkg install wine                                 529  ll /system/build.prop
+  530  uname -a
+  531  vim 贪吃蛇.cpp
+  532  g++ 贪吃蛇.cpp -o tsc_app                        533  apt install libsdl2-dev
+  534  apt install libsdl2-ttf-dev
+  535  apt install sdl2
+  536  apt install sdl2 sdl2_ttf -y
+  537  apt install sdl2 -y
+  538  g++ 贪吃蛇.cpp -o tsc_app
+  539  apt install sdl2-ttf -y
+  540  g++ 贪吃蛇.cpp -o tsc_app
+  541  g++ 贪吃蛇.cpp -o tsc_app -lSDL2 -lSDL2_ttf
+  542  gui
+  543  xfwm4&
+  544  ./tsc_app
+  545  rm 贪吃蛇.cpp
+  546  vim 贪吃蛇.cpp
+  547  g++ 贪吃蛇.cpp -o tsc_app -lSDL2 -lSDL2_ttf      548  vim 贪吃蛇.cpp
+  549  g++ 贪吃蛇.cpp -o tsc_app -lSDL2 -lSDL2_ttf
+  550  ./tsc_app                                        551  emsdk                                            552  em++ 贪吃蛇.cpp -o tsc_app.wasm -lSDL2 -lSDL2_ttf
+  553  # 预加载字体文件到虚拟文件系统
+  554  em++ 贪吃蛇.cpp -o tsc_app.html -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf                                          555  python -m http.server                            556  sw
+  557  python -m http.server
+  558  em++ 贪吃蛇_wasm.cpp -o tsc_app.html -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf                                     559  python -m http.server
+  560  em++ 贪吃蛇_wasm.cpp -o tsc_app.html -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf   --shell-file 贪吃蛇_minimal.html
+  561  find emsdk/upstream/emscripten/src/shell.html
+  562  cat emsdk/upstream/emscripten/src/shell.html
+  563  em++ 贪吃蛇_wasm.cpp -o tsc_app.html -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf   --shell-file 贪吃蛇_minimal.html
+  564  python -m http.server                            565  em++ 贪吃蛇_wasm.cpp -o tcs_app_emnative.html -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf                            566  g++ 贪吃蛇.cpp -o tcs_app:android -lSDL2 -lSDL2_ttf
+  567  g++ 贪吃蛇.cpp -o tcs_app@android -lSDL2 -lSDL2_ttf
+  568  ./tcs_app@android
+  569  em++ 贪吃蛇_wasm.cpp -o tcs_app@emnative.html -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf
+  570  em++ 贪吃蛇_wasm.cpp -o tsc_app@web.html -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf   --shell-file 贪吃蛇_minimal.html
+  571  python -m http.server
+  572  em++ 贪吃蛇_wasm.cpp -o 'tsc_app@web.html' -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf   --shell-file 贪吃蛇_minimal.html                                                  573  em++ 贪吃蛇_wasm.cpp -o 'tcs_app@web.html' -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf   --shell-file 贪吃蛇_minimal.html
+  574  python -m http.server
+  575  em++ 贪吃蛇_wasm.cpp -o 'tcs_app@web.html' -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf   --shell-file 贪吃蛇_minimal.html
+  576  em++ 贪吃蛇_wasm.cpp -o 'tcs_app@web.html' -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf   --shell-file 贪吃蛇_minimal.html && hsrv
+  577  ./ds                                             578  em++ 贪吃蛇_wasm.cpp -o 'tcs_app@web.html' -lSDL2 -lSDL2_ttf   -s USE_SDL=2   -s USE_SDL_TTF=2   -s USE_FREETYPE=1   --preload-file /system/fonts/DroidSans.ttf@/fonts/DroidSans.ttf   --shell-file 贪吃蛇_minimal.html && hsrv
+  579  mkdir MyLearn/MySDL2Snake                        580  cd MyLearn/
+  581  git pull                                         582  cd MySDL2Snake/
+  583  mv ~/tcs* .
+  584  history|vim - -M
+  585  history
