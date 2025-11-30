@@ -118,6 +118,7 @@ void app::Replay::Worker() {
 		}
 		// 业务逻辑
 		if (records.empty()) return;
+		btnStartReplay.enable();
 
 		auto replayStartTime = chrono::steady_clock::now();
 

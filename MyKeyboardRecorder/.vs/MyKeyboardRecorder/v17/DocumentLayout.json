@@ -22,12 +22,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
-            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -36,10 +32,14 @@
               "RelativeDocumentMoniker": "MyKeyboardRecorderApp\\replay.cpp",
               "ToolTip": "D:\\software\\Program\\source\\git\\github.com\\shc0743\\MyLearn\\MyKeyboardRecorder\\MyKeyboardRecorderApp\\replay.cpp",
               "RelativeToolTip": "MyKeyboardRecorderApp\\replay.cpp",
-              "ViewState": "AgIAAEEAAAAAAAAAAAAcwFQAAABCAAAAAAAAAA==",
+              "ViewState": "AgIAAGYAAAAAAAAAAAAIwHgAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-11-29T22:40:02.112Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             },
             {
               "$type": "Document",
