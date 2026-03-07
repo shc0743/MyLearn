@@ -4,9 +4,12 @@
 #include <conio.h>
 #include <iostream>
 #include <vector>
-#include <signal.h>
 #include <format>
 #include <thread>
+#include <csignal>
+#include <cstdio>
+#include <memory>
+#include <string>
 using namespace std;
 using std::cout;
 
@@ -39,7 +42,7 @@ static void memoryUser() {
 
 int main()
 {
-    std::cout << "I'm going to eat memory!!" << endl << endl;
+	std::cout << "I'm going to eat memory!!" << endl << endl;
 
 	signal(SIGINT, [](int) {
 		cout << "\n\nMemory eating interrupted!" << endl;

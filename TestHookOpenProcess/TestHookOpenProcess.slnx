@@ -1,0 +1,8 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Protect/Protect.vcxproj" />
+  <Project Path="TestHookOpenProcess/TestHookOpenProcess.vcxproj" />
+</Solution>
