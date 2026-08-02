@@ -6,5 +6,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="NoSubProcess/NoSubProcess.vcxproj" />
+  <Project Path="NoSubProcess/NoSubProcess.vcxproj" Id="21ab50c9-8a74-4e5d-853a-ad9b344c5acf" />
 </Solution>

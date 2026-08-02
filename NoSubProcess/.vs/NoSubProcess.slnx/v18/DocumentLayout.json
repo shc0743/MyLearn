@@ -1,9 +1,9 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "E:\\Users\\shc07\\Code\\Project\\NoSubProcess\\",
+  "WorkspaceRootPath": "E:\\Users\\shc07\\Code\\git\\github.com\\shc0743\\MyLearn\\NoSubProcess\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{21AB50C9-8A74-4E5D-853A-AD9B344C5ACF}|NoSubProcess\\NoSubProcess.vcxproj|E:\\Users\\shc07\\Code\\Project\\NoSubProcess\\NoSubProcess\\dllmain.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{21AB50C9-8A74-4E5D-853A-AD9B344C5ACF}|NoSubProcess\\NoSubProcess.vcxproj|E:\\Users\\shc07\\Code\\git\\github.com\\shc0743\\MyLearn\\NoSubProcess\\NoSubProcess\\dllmain.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{21AB50C9-8A74-4E5D-853A-AD9B344C5ACF}|NoSubProcess\\NoSubProcess.vcxproj|solutionrelative:NoSubProcess\\dllmain.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
@@ -20,11 +20,11 @@
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "dllmain.cpp",
-              "DocumentMoniker": "E:\\Users\\shc07\\Code\\Project\\NoSubProcess\\NoSubProcess\\dllmain.cpp",
+              "DocumentMoniker": "E:\\Users\\shc07\\Code\\git\\github.com\\shc0743\\MyLearn\\NoSubProcess\\NoSubProcess\\dllmain.cpp",
               "RelativeDocumentMoniker": "NoSubProcess\\dllmain.cpp",
-              "ToolTip": "E:\\Users\\shc07\\Code\\Project\\NoSubProcess\\NoSubProcess\\dllmain.cpp",
+              "ToolTip": "E:\\Users\\shc07\\Code\\git\\github.com\\shc0743\\MyLearn\\NoSubProcess\\NoSubProcess\\dllmain.cpp",
               "RelativeToolTip": "NoSubProcess\\dllmain.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAC4AAAAAAAAAAAAAADsAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2026-07-25T16:38:58.083Z",
               "EditorCaption": ""
