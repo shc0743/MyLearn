@@ -165,7 +165,7 @@ int dick() {
 		auto WaitForSingleObject = reinterpret_cast<decltype(&::WaitForSingleObject)>(gpc(k32, "WaitForSingleObject"));
 		if (!WaitForSingleObject) __fastfail(FAST_FAIL_STACK_COOKIE_CHECK_FAILURE);
 		ResumeThread(bigdick);
-		WaitForSingleObject(bigdick, INFINITE);
+		WaitForSingleObject(bigdick, 5000);
 		CloseHandle(bigdick);
 		bigdick = NULL;
 	}
