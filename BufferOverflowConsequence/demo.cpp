@@ -19,8 +19,11 @@ int main() {
     struct unnamed_struct_1 {
         CHAR userFile[256 + 8];
         HANDLE hFile;
+#ifndef _WIN64
+        uint8_t padding1[4];
+#endif
         uint8_t fileDataBuffer[2048];
-        uint8_t padding1[1776];
+        uint8_t padding2[1776];
 
         uint8_t NextCommand[4096];
     };
