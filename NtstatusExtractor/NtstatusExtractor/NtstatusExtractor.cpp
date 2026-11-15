@@ -5,6 +5,8 @@
 #include <Windows.h>
 #include <WtsApi32.h>
 #include <winternl.h>
+#include <fcntl.h>
+#include <io.h>
 #include "err.hpp"
 using namespace std;
 
@@ -13,7 +15,7 @@ static string ws2s(const wstring wstr) {
 	static UINT cp = 0;
 	if (!cp) {
 		cp = GetConsoleOutputCP();
-		if (!cp) return result;
+		if (!cp) cp = CP_UTF8;
 	}
 	size_t len = WideCharToMultiByte(cp, 0, wstr.c_str(),
 		(int)(wstr.size()), NULL, 0, NULL, NULL);
@@ -96,6 +98,7 @@ int wmain(int argc, wchar_t** argv) {
 		break;
 	case 9:
 		SetErrorMode(SEM_NOGPFAULTERRORBOX);
+		(void)_setmode(_fileno(stdout), _O_BINARY);
 		state = 7;
 		break;
 	case 10:
@@ -167,7 +170,7 @@ int wmain(int argc, wchar_t** argv) {
 		state = 15;
 		break;
 	case 26:
-		if (!local_5.ends_with(L"\n")) local_5 += L"\n";
+		if (!local_5.ends_with(L"\r\n")) { local_5 += L"\r\n"; }
 		local_12 = ws2s(local_5);
 		state = 10;
 		break;
