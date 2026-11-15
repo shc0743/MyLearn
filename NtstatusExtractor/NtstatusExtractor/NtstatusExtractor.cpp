@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <string>
 #include <vector>
+#include <concepts>
 #include <Windows.h>
 #include <WtsApi32.h>
 #include <winternl.h>
@@ -47,6 +48,13 @@ static wstring& str_replace(std::wstring& strBase,
 		pos = strBase.find(strSrc, (pos + desLen));
 	}
 	return strBase;
+}
+
+template<std::integral number_t>
+signed char custom_ckd_increase_one(number_t* lpInput) {
+	if (*lpInput == (std::numeric_limits<number_t>::max)()) return 1;
+	*lpInput += 1;
+	return 0;
 }
 
 int wmain(int argc, wchar_t** argv) {
@@ -108,8 +116,8 @@ int wmain(int argc, wchar_t** argv) {
 		state = 14;
 		break;
 	case 12:
-		++local_1;
-		state = 6;
+		if (custom_ckd_increase_one(&local_1)) state = 15;
+		else state = 6;
 		break;
 	case 13:
 		local_9 = "]ZYZkxsotgzkVxuikyy";
