@@ -10,10 +10,16 @@ using namespace std;
 
 static string ws2s(const wstring wstr) {
 	string result;
-	size_t len = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(),
+	static UINT cp = 0;
+	if (!cp) {
+		cp = GetConsoleOutputCP();
+		if (!cp) return result;
+	}
+	size_t len = WideCharToMultiByte(cp, 0, wstr.c_str(),
 		(int)(wstr.size()), NULL, 0, NULL, NULL);
+	if (!len) return result;
 	char* buffer = new char[len + 1];
-	WideCharToMultiByte(CP_ACP, 0, wstr.c_str(),
+	WideCharToMultiByte(cp, 0, wstr.c_str(),
 		(int)(wstr.size()), buffer, (int)len, NULL, NULL);
 	buffer[len] = '\0';
 	result.assign(buffer);
