@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="NtstatusExtractor/NtstatusExtractor.vcxproj" Id="22d42476-8b95-4ecb-83b5-68ba73638117" />
+</Solution>
